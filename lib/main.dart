@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 // Import required external libraries.
+import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
 void main() => runApp(const Main());
@@ -11,14 +12,18 @@ void main() => runApp(const Main());
 class _MainState extends State<Main> {
   String _location = 'null';
 
-  late String _current = ''; // DONE: Implement directory navigation.
+  late String _current = '';
   late List _currentData;
+  late List _currentDataAndDeleted;
+  late List _currentDataStaged;
+  late List _currentDataUnstaged;
+  List _currentDeleted = [];
 
   List _branches = [];
 
   String _sidebarContentState = "";
 
-  void _currentUpdate() {
+  void _currentUpdate() async {
     _currentData = [];
 
     List i = Directory("$_location$_current").listSync(
@@ -32,12 +37,49 @@ class _MainState extends State<Main> {
       _currentData[j] = _currentData[j].substring(0, _currentData[j].length-1);
     }
 
-    _currentData.remove("$_location$_current/.git");
-    _currentData.sort();
+    var deletedResult = await Process.start(
+        "git", ["ls-files", "--deleted"],
+        workingDirectory: _location);
 
+    _currentData.remove("$_location$_current/.git");
     if (_current != "") {
       _currentData.insert(0, "$_location$_current/..");
     }
+
+    _currentData.sort();
+
+    await deletedResult.stdout
+        .transform(utf8.decoder)
+        .forEach((String out) => {
+          _currentDeleted = const LineSplitter().convert(out),
+        });
+
+    for (var i = _currentDeleted.length - 1; i >= 0; i--) {
+      var j = _currentDeleted[i].split("/");
+      j.remove(_currentDeleted[i].split("/").last);
+
+      var k = _current.split("/");
+      k.remove("");
+
+      if (const ListEquality().equals(j, k)) {
+        //print("HIT");
+        var j = _currentDeleted[i];
+        _currentDeleted[i] = "$_location/$j";
+      } else {
+        _currentDeleted.removeAt(i);
+      }
+
+      //if (_currentDeleted[i].split("/").remove(_currentDeleted[i].split("/").last) == _current) {}
+      //var j = _currentDeleted[i];
+      //_currentDeleted[i] = "$_location/$j";
+    }
+
+    //print(_currentDeleted);
+
+    _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
+    _currentDataAndDeleted.sort();
+
+    print(_currentDataAndDeleted);
   }
 
   final GlobalKey<ScaffoldState> _key = GlobalKey();
@@ -96,21 +138,20 @@ class _MainState extends State<Main> {
               child: GestureDetector(
                 onTap: () async {
                   var branchResult = await Process.start(
-                      "git", ["branch", "-a"],
-                      workingDirectory: _location);
+                    "git", ["branch", "-a"],
+                    workingDirectory: _location);
 
                   branchResult.stdout
-                      .transform(utf8.decoder)
-                      .forEach((String out) => {
-                    setState(() {
-                      _branches = const LineSplitter().convert(out);
-                    }),
-                  });
+                    .transform(utf8.decoder)
+                    .forEach((String out) => {
+                      setState(() {
+                        _branches = const LineSplitter().convert(out);
+                      }),
+                    });
 
                   setState(() {_sidebarContentState = "branches";});
                   _key.currentState!.openEndDrawer();
                   // DONE: Show the branch list on click.
-                  // TODO: Implement branch switching and simplification.
                 },
                 child: const Icon(Icons.account_tree_outlined),
               ),
@@ -124,29 +165,7 @@ class _MainState extends State<Main> {
                 children: [
                   if (_location != 'null') ...[
                     for (var i = 0; i < _currentData.length; i++)
-                      GestureDetector(
-                        onTap: () async {
-                          if (await Directory(_currentData[i]).exists()) {
-                            Directory(_currentData[i]).listSync();
-
-                            setState(() {
-                              _current =
-                                  _currentData[i].replaceAll(_location, "");
-
-                              if (_current.split("/").last == "..") {
-                                _current =
-                                    _current.substring(0, _current.length - 3);
-                                _current = _current.replaceAll(_current
-                                    .split("/").last, "");
-                                _current =
-                                    _current.substring(0, _current.length - 1);
-                              }
-
-                              _currentUpdate();
-                            });
-                          }
-                        },
-                        child: Container(
+                        Container(
                           decoration: const BoxDecoration(
                             border: Border(
                               top: BorderSide(width: 1.5, color: Colors.black),
@@ -167,7 +186,32 @@ class _MainState extends State<Main> {
                                         child: Icon(Icons.circle_outlined, size: 16.0),
                                         // circle_outlined, add_circle, remove_circle
                                       ),
-                                      Text(_currentData[i].split("/").last),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          if (await Directory(_currentData[i]).exists()) {
+                                            Directory(_currentData[i]).listSync();
+
+                                            setState(() {
+                                              _current =
+                                                  _currentData[i].replaceAll(_location, "");
+
+                                              if (_current.split("/").last == "..") {
+                                                _current =
+                                                    _current.substring(0, _current.length - 3);
+                                                _current = _current.replaceAll(_current
+                                                    .split("/").last, "");
+                                                _current =
+                                                    _current.substring(0, _current.length - 1);
+                                              }
+
+                                              _currentUpdate();
+                                            });
+                                          }
+                                        },
+                                        child: Text(_currentData[i]
+                                            //.split("/").last
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -178,7 +222,6 @@ class _MainState extends State<Main> {
                               ]
                           ),
                         ),
-                      ),
                     Container( // (Bottom border for decorations sake...)
                       height: 1.5,
                       decoration: const BoxDecoration(color: Colors.black),
@@ -204,6 +247,14 @@ class Main extends StatefulWidget {
 class _SidebarState extends State<Sidebar> {
   @override
   Widget build(BuildContext context) {
+    Color selectedColor(String i) {
+      if (i[0] == '*') {
+        return Colors.blue;
+      } else {
+        return Colors.black;
+      }
+    }
+
     return Drawer(
       child: SingleChildScrollView(
         child: Column(
@@ -212,7 +263,7 @@ class _SidebarState extends State<Sidebar> {
                 const Padding(
                   padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
                   child: Align(
-                    alignment: Alignment.topRight,
+                    alignment: Alignment.topLeft,
                     child: Text("Branches"),
                   ),
                 ),
@@ -225,14 +276,24 @@ class _SidebarState extends State<Sidebar> {
                         onTap: () {
                           void checkoutBranch() async {
                             await Process.start(
-                                "git", ["checkout", "master"],
+                              "git", ["checkout",
+                                widget.sidebarBranches[i]
+                                  .substring(2, widget.sidebarBranches[i].length)
+                                  .split(" -> ").last],
                                 workingDirectory: widget.targetLocation);
                           }
 
                           checkoutBranch();
                           Navigator.pop(context);
+                          // TODO: Implement actual branch switching.
                         },
-                        child: Text(widget.sidebarBranches[i]),
+                        child: Text(
+                          widget.sidebarBranches[i]
+                            .substring(2, widget.sidebarBranches[i].length)
+                            .split(" -> ").last,
+
+                          style: TextStyle(color: selectedColor(widget.sidebarBranches[i])),
+                        ),
                       ),
                     ),
                   ),

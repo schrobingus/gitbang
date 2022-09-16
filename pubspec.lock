@@ -100,6 +100,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  git:
+    dependency: "direct main"
+    description:
+      name: git
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0"
   js:
     dependency: transitive
     description:
@@ -136,7 +143,7 @@ packages:
     source: hosted
     version: "1.7.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       url: "https://pub.dartlang.org"

@@ -102,6 +102,22 @@ class _MainState extends State<Main> {
     //print(_currentDataAndDeleted);
   }
 
+  void _refresh() async {
+    var deletedResult = await Process.start(
+      "git", ["ls-files", "--deleted"],
+      workingDirectory: _location);
+
+    var stagedResult = await Process.start(
+      "git", ["diff", "--name-only", "--staged"],
+      workingDirectory: _location);
+
+    var unstagedResult = await Process.start(
+      "git", ["ls-files", "--exclude-standard", "--others", "-m"],
+      workingDirectory: _location);
+
+    _currentUpdate(deletedResult, stagedResult, unstagedResult);
+  }
+
   final GlobalKey<ScaffoldState> _key = GlobalKey();
 
   @override
@@ -151,16 +167,19 @@ class _MainState extends State<Main> {
           /*await Process.run(
             "git", ["commit", "-m", "'some message'"],
             workingDirectory: _location);*/
+          _refresh();
         } break;
         case 1: { // PULL
           await Process.run(
             "git", ["pull"],
             workingDirectory: _location);
+          _refresh();
         } break;
         case 2: { // PUSH
           /*await Process.run(
             "git", ["push"],
             workingDirectory: _location);*/
+          // Unneeded to refresh since nothing local is affected.
         }
       }
     }
@@ -171,16 +190,19 @@ class _MainState extends State<Main> {
           await Process.run("git", ["add",
             _currentDataAndDeleted[item].replaceAll("$_location/", "")],
             workingDirectory: _location);
+          _refresh();
         } break;
         case 1: { // UNSTAGE
           await Process.run("git", ["reset", "--",
             _currentDataAndDeleted[item].replaceAll("$_location/", "")],
             workingDirectory: _location);
+          _refresh();
         } break;
         case 2: { // RESTORE
           await Process.run("git", ["restore",
             _currentDataAndDeleted[item].replaceAll("$_location/", "")],
             workingDirectory: _location);
+          _refresh();
         } break;
       }
     }
@@ -202,24 +224,12 @@ class _MainState extends State<Main> {
                 //bool resultIsGit = await GitDir.isGitDir(result);
                 if (resultExists) {
                   if (resultIsGit) {
-                    var deletedResult = await Process.start(
-                      "git", ["ls-files", "--deleted"],
-                      workingDirectory: result);
-
-                    var stagedResult = await Process.start(
-                      "git", ["diff", "--name-only", "--staged"],
-                      workingDirectory: result);
-
-                    var unstagedResult = await Process.start(
-                      "git", ["ls-files", "--exclude-standard", "--others", "-m"],
-                      workingDirectory: result);
-
                     setState(() {
                       _location = result;
                       _current = '';
                     });
 
-                    _currentUpdate(deletedResult, stagedResult, unstagedResult);
+                    _refresh();
                   }
                 }
               }
@@ -320,19 +330,7 @@ class _MainState extends State<Main> {
                                             workingDirectory: _location);
                                         }
 
-                                        var deletedResult = await Process.start(
-                                          "git", ["ls-files", "--deleted"],
-                                          workingDirectory: _location);
-
-                                        var stagedResult = await Process.start(
-                                          "git", ["diff", "--name-only", "--staged"],
-                                          workingDirectory: _location);
-
-                                        var unstagedResult = await Process.start(
-                                          "git", ["ls-files", "--exclude-standard", "--others", "-m"],
-                                          workingDirectory: _location);
-
-                                        _currentUpdate(deletedResult, stagedResult, unstagedResult);
+                                        _refresh();
                                       },
                                       //onSecondaryTap: () {print("aeiou");},
                                       child: Icon(
@@ -343,18 +341,6 @@ class _MainState extends State<Main> {
                                   ),
                                   GestureDetector(
                                     onTap: () async {
-                                      var deletedResult = await Process.start(
-                                        "git", ["ls-files", "--deleted"],
-                                        workingDirectory: _location);
-
-                                      var stagedResult = await Process.start(
-                                        "git", ["diff", "--name-only", "--staged"],
-                                        workingDirectory: _location);
-
-                                      var unstagedResult = await Process.start(
-                                        "git", ["ls-files", "--exclude-standard", "--others", "-m"],
-                                        workingDirectory: _location);
-
                                       if (await Directory(_currentData[i]).exists()) {
                                         Directory(_currentData[i]).listSync();
 
@@ -372,7 +358,7 @@ class _MainState extends State<Main> {
                                           }
                                         });
 
-                                        _currentUpdate(deletedResult, stagedResult, unstagedResult);
+                                        _refresh();
                                       }
                                     },
                                     child: Text(_currentDataAndDeleted[i].split("/").last,
@@ -438,19 +424,7 @@ class _MainState extends State<Main> {
         endDrawer: Sidebar(_sidebarContentState, _branches, _location),
         onEndDrawerChanged: (isOpen) async {
           if (! isOpen) {
-            var deletedResult = await Process.start(
-              "git", ["ls-files", "--deleted"], // FIXME: Show file if staged but not committed.
-              workingDirectory: _location);
-
-            var stagedResult = await Process.start(
-              "git", ["diff", "--name-only", "--staged"],
-              workingDirectory: _location);
-
-            var unstagedResult = await Process.start(
-              "git", ["ls-files", "--exclude-standard", "--others", "-m"],
-              workingDirectory: _location);
-
-            _currentUpdate(deletedResult, stagedResult, unstagedResult);
+            _refresh();
           }
         },
       ),

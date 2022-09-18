@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 // Import required external libraries.
-//import 'package:git/git.dart'; // Git manipulation for Dart. // TODO: Attempt to replace with own functions once at functional point.
+//import 'package:git/git.dart'; // Git manipulation for Dart. // DONE FOR NOW: Attempt to replace with own functions once at functional point.
 import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
@@ -106,31 +106,82 @@ class _MainState extends State<Main> {
 
   @override
   Widget build(BuildContext context) {
-    Color deletedColor(String itemName) {
-      if (_currentDeleted.contains(itemName)) {
+    Color deletedColor(var item) {
+      if (_currentDeleted.contains(_currentDataAndDeleted[item])) {
         return Colors.grey;
       } else {
         return Colors.black;
       }
     }
 
-    IconData stagingIcon(var itemName) {
-      if (_currentDataStaged.contains(_currentDataAndDeleted[itemName])) {
+    IconData stagingIcon(var item) {
+      if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
         return Icons.add_circle;
-      } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[itemName])) {
+      } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
         return Icons.remove_circle;
       } else {
         return Icons.circle_outlined;
       }
     }
 
-    Color stagingIconColor(var itemName) {
-      if (_currentDataStaged.contains(_currentDataAndDeleted[itemName])) {
+    Color stagingIconColor(int item) {
+      if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
         return Colors.green;
-      } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[itemName])) {
+      } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
         return Colors.red;
       } else {
         return Colors.black;
+      }
+    }
+
+    String typeName(int item) {
+      if (_currentDeleted.contains(_currentDataAndDeleted[item])) {
+        return "Deleted";
+      } else if (Directory(_currentDataAndDeleted[item]).existsSync()) {
+        return "Directory";
+        // NOTE: This also includes '..', noting for future reference.
+      } else {
+        return "File";
+      }
+    }
+
+    void extraOptions(int selected) async {
+      switch (selected) {
+        case 0: { // COMMIT
+          /*await Process.run(
+            "git", ["commit", "-m", "'some message'"],
+            workingDirectory: _location);*/
+        } break;
+        case 1: { // PULL
+          await Process.run(
+            "git", ["pull"],
+            workingDirectory: _location);
+        } break;
+        case 2: { // PUSH
+          /*await Process.run(
+            "git", ["push"],
+            workingDirectory: _location);*/
+        }
+      }
+    }
+
+    void extraItemOptions(int item, int selected) async {
+      switch (selected) {
+        case 0: { // STAGE
+          await Process.run("git", ["add",
+            _currentDataAndDeleted[item].replaceAll("$_location/", "")],
+            workingDirectory: _location);
+        } break;
+        case 1: { // UNSTAGE
+          await Process.run("git", ["reset", "--",
+            _currentDataAndDeleted[item].replaceAll("$_location/", "")],
+            workingDirectory: _location);
+        } break;
+        case 2: { // RESTORE
+          await Process.run("git", ["restore",
+            _currentDataAndDeleted[item].replaceAll("$_location/", "")],
+            workingDirectory: _location);
+        } break;
       }
     }
 
@@ -178,11 +229,23 @@ class _MainState extends State<Main> {
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
-              child: GestureDetector(
-                onTap: () {
-                  // TODO: On click, launch a context menu for more options.
-                },
-                child: const Icon(Icons.more_horiz),
+              child: PopupMenuButton<int>(
+                onSelected: (item) => extraOptions(item),
+                itemBuilder: (context) => const [
+                  PopupMenuItem<int>(
+                    value: 0,
+                    child: Text("Commit"),
+                  ),
+                  PopupMenuDivider(),
+                  PopupMenuItem<int>(
+                    value: 1,
+                    child: Text("Pull"),
+                  ),
+                  PopupMenuItem<int>(
+                    value: 2,
+                    child: Text("Push"),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -314,7 +377,7 @@ class _MainState extends State<Main> {
                                     },
                                     child: Text(_currentDataAndDeleted[i].split("/").last,
                                       style: TextStyle(
-                                        color: deletedColor(_currentDataAndDeleted[i]),
+                                        color: deletedColor(i),
                                         //color: Colors.black,
                                       ),
                                     ),
@@ -322,9 +385,43 @@ class _MainState extends State<Main> {
                                 ],
                               ),
                             ),
-                            const Align(
-                                alignment: Alignment.centerRight,
-                                child: Text('*LAST COMMIT*') // TODO: Fill text with the file's last commit.
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: Text(typeName(i)),
+                                  ),
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: PopupMenuButton<int>(
+                                      padding: const EdgeInsets.all(0.0),
+                                      onSelected: (item) => extraItemOptions(i, item),
+                                      icon: const Icon(
+                                        Icons.more_vert,
+                                        size: 16.0,
+                                      ),
+                                      itemBuilder: (context) => const [
+                                        PopupMenuItem<int>(
+                                          value: 0,
+                                          child: Text("Stage"),
+                                        ),
+                                        PopupMenuItem<int>(
+                                          value: 1,
+                                          child: Text("Unstage"),
+                                        ),
+                                        PopupMenuDivider(),
+                                        PopupMenuItem<int>(
+                                          value: 2,
+                                          child: Text("Restore")
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ]
                       ),

@@ -1,10 +1,10 @@
 // Import required built in libraries.
 import 'dart:convert';
+//import 'dart:html';
 import 'dart:io';
 import 'package:flutter/material.dart';
 
 // Import required external libraries.
-//import 'package:git/git.dart'; // Git manipulation for Dart. // DONE FOR NOW: Attempt to replace with own functions once at functional point.
 import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
@@ -16,11 +16,12 @@ class _MainState extends State<Main> {
   late String _current = '';
   late List _currentData;
   late List _currentDataAndDeleted;
-  late List _currentDataStaged;
-  late List _currentDataUnstaged;
+  List _currentDataStaged = [];
+  List _currentDataUnstaged = [];
   List _currentDeleted = [];
 
   List _branches = [];
+  List _history = [];
 
   String _sidebarContentState = "";
 
@@ -131,7 +132,10 @@ class _MainState extends State<Main> {
     }
 
     IconData stagingIcon(var item) {
-      if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
+      if (_currentDataStaged.contains(_currentDataAndDeleted[item])
+          && _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
+        return Icons.swap_vert_circle; // build_circle, change_circle, playlist_add_circle, swap_horiz_circle, swap_vert_circle
+      } else if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
         return Icons.add_circle;
       } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
         return Icons.remove_circle;
@@ -141,7 +145,10 @@ class _MainState extends State<Main> {
     }
 
     Color stagingIconColor(int item) {
-      if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
+      if (_currentDataStaged.contains(_currentDataAndDeleted[item])
+          && _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
+        return Colors.deepPurple;
+      } else if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
         return Colors.green;
       } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
         return Colors.red;
@@ -161,52 +168,6 @@ class _MainState extends State<Main> {
       }
     }
 
-    void extraOptions(int selected) async {
-      switch (selected) {
-        case 0: { // COMMIT
-          /*await Process.run(
-            "git", ["commit", "-m", "'some message'"],
-            workingDirectory: _location);*/
-          _refresh();
-        } break;
-        case 1: { // PULL
-          await Process.run(
-            "git", ["pull"],
-            workingDirectory: _location);
-          _refresh();
-        } break;
-        case 2: { // PUSH
-          /*await Process.run(
-            "git", ["push"],
-            workingDirectory: _location);*/
-          // Unneeded to refresh since nothing local is affected.
-        }
-      }
-    }
-
-    void extraItemOptions(int item, int selected) async {
-      switch (selected) {
-        case 0: { // STAGE
-          await Process.run("git", ["add",
-            _currentDataAndDeleted[item].replaceAll("$_location/", "")],
-            workingDirectory: _location);
-          _refresh();
-        } break;
-        case 1: { // UNSTAGE
-          await Process.run("git", ["reset", "--",
-            _currentDataAndDeleted[item].replaceAll("$_location/", "")],
-            workingDirectory: _location);
-          _refresh();
-        } break;
-        case 2: { // RESTORE
-          await Process.run("git", ["restore",
-            _currentDataAndDeleted[item].replaceAll("$_location/", "")],
-            workingDirectory: _location);
-          _refresh();
-        } break;
-      }
-    }
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Feta',
@@ -221,7 +182,6 @@ class _MainState extends State<Main> {
               if (result != 'null') {
                 bool resultExists = await Directory(result!).exists();
                 bool resultIsGit = await Directory("$result/.git").exists();
-                //bool resultIsGit = await GitDir.isGitDir(result);
                 if (resultExists) {
                   if (resultIsGit) {
                     setState(() {
@@ -240,20 +200,126 @@ class _MainState extends State<Main> {
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
               child: PopupMenuButton<int>(
-                onSelected: (item) => extraOptions(item),
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem<int>(
-                    value: 0,
-                    child: Text("Commit"),
+                    child: const Text("New Commit"),
+                    onTap: () {
+                      TextEditingController commitMessage = TextEditingController();
+                      String commitChanges = _currentDataStaged.join("\n").replaceAll(_location, "");
+                      Future.delayed(const Duration(seconds: 0),
+                        () => showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('New Commit'),
+                            content: SizedBox(
+                              height: 200,
+                              child: Column(
+                                children: [
+                                  TextField(
+                                    controller: commitMessage,
+                                    decoration: const InputDecoration(
+                                      hintText: "Message (optional)",
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 30.0, bottom: 5.0),
+                                    child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text("Items to be committed:"),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 240,
+                                    constraints: const BoxConstraints(
+                                      minHeight: 80,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.black,
+                                        width: 1,
+                                      )
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: Text(commitChanges,
+                                            style: const TextStyle(
+                                              fontSize: 12.0,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text("Cancel")),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  String commitMessageResult = commitMessage.text;
+                                  List<String> commitCommand = [ "commit" ];
+
+                                  if (commitMessageResult != "") {
+                                    commitCommand.add("-m");
+                                    commitCommand.addAll("'$commitMessageResult'".split(" "));
+                                  }
+
+                                  await Process.run(
+                                    "git", commitCommand,
+                                    workingDirectory: _location);
+
+                                  _refresh();
+                                },
+                                child: const Text("Apply")),
+                            ],
+                          );
+                        }
+                      ));
+                    },
                   ),
-                  PopupMenuDivider(),
                   PopupMenuItem<int>(
-                    value: 1,
-                    child: Text("Pull"),
+                    child: const Text("Revert Commit"),
+                    onTap: () {},
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<int>(
+                    child: const Text("Pull Commits"),
+                    onTap: () async {
+                      await Process.run(
+                        "git", ["pull"],
+                        workingDirectory: _location);
+                      _refresh();
+                    },
                   ),
                   PopupMenuItem<int>(
-                    value: 2,
-                    child: Text("Push"),
+                    child: const Text("Push Commits"),
+                    onTap: () async {
+                      await Process.run(
+                        "git", ["push"],
+                        workingDirectory: _location);
+                      // Unneeded to refresh since nothing local is affected.
+                    },
+                  ),
+                  PopupMenuItem<int>(
+                    child: const Text("Refresh"),
+                    onTap: () {
+                      _refresh();
+                    },
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<int>(
+                    child: const Text("Preferences"),
+                    onTap: () {},
                   ),
                 ],
               ),
@@ -261,7 +327,36 @@ class _MainState extends State<Main> {
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
               child: GestureDetector(
-                onTap: () {
+                onTap: () async {
+                  var historyResult = await Process.start(
+                      "git", ["log", "--oneline"], // TODO: Split into pages.
+                      workingDirectory: _location);
+
+                  var pipeHead = await Process.start("head", ["-n", "10"]);
+                  // This contains the number of entries from start before getting cut.
+                  historyResult.stdout.pipe(pipeHead.stdin);
+
+                  var pipeTail = await Process.start("tail", ["-n", "10"]);
+                  // This cuts out the entries at the end, returning a certain number of entries at a certain point.
+                  pipeHead.stdout.pipe(pipeTail.stdin);
+
+                  pipeTail.stdout
+                    .transform(utf8.decoder)
+                    .forEach((String out) => {
+                      setState(() {
+                        List i = const LineSplitter().convert(out);
+
+                        _history = [];
+                        for (var j = 0; j < i.length; j++) {
+                          var k = i[j].split(" ").first;
+                          _history.add([k, i[j].replaceAll("$k ", "")]);
+                        }
+
+                        //print(_history);
+                      }),
+                  });
+
+                  setState(() {_sidebarContentState = "history";});
                   _key.currentState!.openEndDrawer();
                   // TODO: Show the commit history on click.
                 },
@@ -299,7 +394,7 @@ class _MainState extends State<Main> {
             child: Column(
               children: [
                 if (_location != 'null') ...[
-                  for (var i = 0; i < _currentDataAndDeleted.length; i++)
+                  for (var i = 0; i < _currentDataAndDeleted.length; i++) ...[
                     Container(
                       decoration: const BoxDecoration(
                         border: Border(
@@ -320,19 +415,20 @@ class _MainState extends State<Main> {
                                     padding: const EdgeInsets.only(right: 8.0),
                                     child: GestureDetector(
                                       onTap: () async {
-                                        if (_currentDataStaged.contains(_currentDataAndDeleted[i])) {
-                                          await Process.run("git", ["reset", "--",
+                                        if (_currentDataUnstaged.contains(_currentDataAndDeleted[i]) ||
+                                            (_currentDataStaged.contains(_currentDataAndDeleted[i]) &&
+                                                _currentDataUnstaged.contains(_currentDataAndDeleted[i]))) {
+                                          await Process.run("git", ["add",
                                             _currentDataAndDeleted[i].replaceAll("$_location/", "")],
                                             workingDirectory: _location);
-                                        } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[i])) {
-                                          await Process.run("git", ["add",
+                                        } else if (_currentDataStaged.contains(_currentDataAndDeleted[i])) {
+                                          await Process.run("git", ["reset", "--",
                                             _currentDataAndDeleted[i].replaceAll("$_location/", "")],
                                             workingDirectory: _location);
                                         }
 
                                         _refresh();
                                       },
-                                      //onSecondaryTap: () {print("aeiou");},
                                       child: Icon(
                                         stagingIcon(i),
                                         color: stagingIconColor(i),
@@ -384,24 +480,38 @@ class _MainState extends State<Main> {
                                     height: 16,
                                     child: PopupMenuButton<int>(
                                       padding: const EdgeInsets.all(0.0),
-                                      onSelected: (item) => extraItemOptions(i, item),
                                       icon: const Icon(
                                         Icons.more_vert,
                                         size: 16.0,
                                       ),
-                                      itemBuilder: (context) => const [
+                                      itemBuilder: (context) => [
                                         PopupMenuItem<int>(
-                                          value: 0,
-                                          child: Text("Stage"),
+                                          child: const Text("Stage"),
+                                          onTap: () async {
+                                            await Process.run("git", ["add",
+                                              _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                              workingDirectory: _location);
+                                            _refresh();
+                                          },
                                         ),
                                         PopupMenuItem<int>(
-                                          value: 1,
-                                          child: Text("Unstage"),
+                                          child: const Text("Unstage"),
+                                          onTap: () async {
+                                            await Process.run("git", ["reset", "--",
+                                              _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                              workingDirectory: _location);
+                                            _refresh();
+                                          },
                                         ),
-                                        PopupMenuDivider(),
+                                        const PopupMenuDivider(),
                                         PopupMenuItem<int>(
-                                          value: 2,
-                                          child: Text("Restore")
+                                          child: const Text("Restore"),
+                                          onTap: () async {
+                                            await Process.run("git", ["restore",
+                                              _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                              workingDirectory: _location);
+                                            _refresh();
+                                          },
                                         ),
                                       ],
                                     ),
@@ -412,6 +522,7 @@ class _MainState extends State<Main> {
                           ]
                       ),
                     ),
+                  ],
                   Container( // (Bottom border for decorations sake...)
                     height: 1.5,
                     decoration: const BoxDecoration(color: Colors.black),
@@ -421,7 +532,7 @@ class _MainState extends State<Main> {
             ),
           ),
         ),
-        endDrawer: Sidebar(_sidebarContentState, _branches, _location),
+        endDrawer: Sidebar(_sidebarContentState, _branches, _history, _location),
         onEndDrawerChanged: (isOpen) async {
           if (! isOpen) {
             _refresh();
@@ -444,7 +555,11 @@ class _SidebarState extends State<Sidebar> {
   Widget build(BuildContext context) {
     Color selectedColor(String i) {
       if (i[0] == '*') {
-        return Colors.blue;
+        if (i.contains("detached")){
+          return Colors.red;
+        } else {
+          return Colors.blue;
+        }
       } else {
         return Colors.black;
       }
@@ -459,38 +574,110 @@ class _SidebarState extends State<Sidebar> {
                 padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
                 child: Align(
                   alignment: Alignment.topLeft,
-                  child: Text("Branches"),
+                  child: Text("Local"),
                 ),
               ),
-              for (var i = 0; i < widget.sidebarBranches.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 5.0, bottom: 5.0),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: GestureDetector(
-                      onTap: () {
-                        void checkoutBranch() async {
-                          await Process.start(
-                            "git", ["checkout",
-                            widget.sidebarBranches[i]
-                              .substring(2, widget.sidebarBranches[i].length)
-                              .split(" -> ").last],
-                              workingDirectory: widget.targetLocation); // TODO: Fix branching system.
-                        }
+              for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
+                if (! widget.sidebarBranches[i]
+                    .substring(2, widget.sidebarBranches[i].length)
+                    .split(" -> ").last
+                    .startsWith("remotes/")) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 5.0, bottom: 5.0),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: GestureDetector(
+                        onTap: () {
+                          void checkoutBranch() async {
+                            await Process.start(
+                              "git", ["checkout",
+                              widget.sidebarBranches[i]
+                                .substring(2, widget.sidebarBranches[i].length)
+                                .split(" -> ").last],
+                                workingDirectory: widget.targetLocation); // TODO: Fix branching system.
+                          }
 
-                        checkoutBranch();
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        widget.sidebarBranches[i]
-                          .substring(2, widget.sidebarBranches[i].length)
-                          .split(" -> ").last,
+                          checkoutBranch();
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          widget.sidebarBranches[i]
+                            .substring(2, widget.sidebarBranches[i].length)
+                            .split(" -> ").last,
 
-                        style: TextStyle(color: selectedColor(widget.sidebarBranches[i])),
+                          style: TextStyle(color: selectedColor(widget.sidebarBranches[i])),
+                        ),
                       ),
                     ),
                   ),
+                ],
+              ],
+              const Padding(
+                padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text("Remote"),
                 ),
+              ),
+              for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
+                if (widget.sidebarBranches[i]
+                    .substring(2, widget.sidebarBranches[i].length)
+                    .split(" -> ").last
+                    .startsWith("remotes/")) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 5.0, bottom: 5.0),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: GestureDetector(
+                        onTap: () {
+                          void checkoutBranch() async {
+                            await Process.start(
+                                "git", ["checkout",
+                              widget.sidebarBranches[i]
+                                  .substring(2, widget.sidebarBranches[i].length)
+                                  .split(" -> ").last],
+                                workingDirectory: widget.targetLocation); // TODO: Fix branching system.
+                          }
+
+                          checkoutBranch();
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          widget.sidebarBranches[i]
+                              .substring(2, widget.sidebarBranches[i].length)
+                              .split(" -> ").last,
+
+                          style: TextStyle(color: selectedColor(widget.sidebarBranches[i])),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ] else if (widget.sidebarContent == "history") ...[
+              Column(
+                children: [
+                  for (var i = 0; i < widget.sidebarHistory.length; i++) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(widget.sidebarHistory[i][0]),
+                        ),
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Text(widget.sidebarHistory[i][1],
+                              textAlign: TextAlign.right),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ],
           ]
         ),
@@ -502,8 +689,9 @@ class _SidebarState extends State<Sidebar> {
 class Sidebar extends StatefulWidget {
   final String sidebarContent;
   final List sidebarBranches;
+  final List sidebarHistory;
   final String targetLocation;
-  const Sidebar(this.sidebarContent, this.sidebarBranches, this.targetLocation);
+  const Sidebar(this.sidebarContent, this.sidebarBranches, this.sidebarHistory, this.targetLocation);
 
   @override
   State<Sidebar> createState() => _SidebarState();

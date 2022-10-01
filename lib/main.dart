@@ -188,6 +188,7 @@ class _MainState extends State<Main> {
               Icons.add,
               size: 24.0,
             ),
+            tooltip: "Open Project",
             onPressed: () async {
               // TODO: Find the directory for a new project.
               String? result = await FilePicker.platform.getDirectoryPath();
@@ -250,6 +251,7 @@ class _MainState extends State<Main> {
                 Icons.more_horiz,
                 size: 24.0,
               ),
+              tooltip: "Options",
               itemBuilder: (context) => [
                 PopupMenuItem<int>(
                   child: const Text("New Commit"),
@@ -272,7 +274,7 @@ class _MainState extends State<Main> {
                                       TextField(
                                         controller: commitMessage,
                                         decoration: const InputDecoration(
-                                          hintText: "Message (optional)",
+                                          hintText: "Message",
                                         ),
                                       ),
                                       const Padding(
@@ -345,7 +347,77 @@ class _MainState extends State<Main> {
                 ),
                 PopupMenuItem<int>(
                   child: const Text("Revert Commit"),
-                  onTap: () {},
+                  onTap: () {
+                    TextEditingController revertMessage =
+                        TextEditingController();
+                    TextEditingController revertCommit =
+                        TextEditingController();
+                    Future.delayed(
+                        const Duration(seconds: 0),
+                        () => showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Revert Commit'),
+                                content: SizedBox(
+                                  height: 100,
+                                  child: Column(
+                                    children: [
+                                      TextField(
+                                        controller: revertCommit,
+                                        decoration: const InputDecoration(
+                                          hintText: "Commit (ex: f668902)",
+                                        ),
+                                      ),
+                                      TextField(
+                                        controller: revertMessage,
+                                        decoration: const InputDecoration(
+                                          hintText: "Message",
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text("Cancel")),
+                                  TextButton(
+                                      onPressed: () async {
+                                        Navigator.of(context).pop();
+                                        String revertMessageResult =
+                                            revertMessage.text;
+                                        List<String> commitCommand = ["commit"];
+
+                                        if (revertMessageResult != "") {
+                                          commitCommand.add("-m");
+                                          commitCommand.addAll(
+                                              "'$revertMessageResult'"
+                                                  .split(" "));
+                                        }
+
+                                        await Process.run(
+                                            // FIXME: Make sure it runs this afterwards.
+                                            "git",
+                                            [
+                                              "revert",
+                                              "--no-commit",
+                                              revertCommit.text
+                                            ],
+                                            workingDirectory: _location);
+
+                                        await Process.run("git", commitCommand,
+                                            workingDirectory: _location);
+
+                                        _refresh();
+                                      },
+                                      child: const Text("Apply")),
+                                ],
+                              );
+                            }));
+                  },
                 ),
                 const PopupMenuDivider(),
                 PopupMenuItem<int>(
@@ -386,6 +458,7 @@ class _MainState extends State<Main> {
                 Icons.history,
                 size: 24.0,
               ),
+              tooltip: "Commit History",
               onPressed: () async {
                 var historyResult = await Process.start(
                     "git", ["log", "--oneline"], // TODO: Split into pages.
@@ -431,6 +504,7 @@ class _MainState extends State<Main> {
                 Icons.account_tree_outlined,
                 size: 24.0,
               ),
+              tooltip: "Branches",
               onPressed: () async {
                 var branchResult = await Process.start("git", ["branch", "-a"],
                     workingDirectory: _location);
@@ -718,22 +792,84 @@ class _SidebarState extends State<Sidebar> {
                                   .targetLocation); // TODO: Fix branching system.
                         }
 
-                        checkoutBranch();
+                        if (!widget.sidebarBranches[i]
+                            .substring(2, widget.sidebarBranches[i].length)
+                            .startsWith("(")) {
+                          checkoutBranch();
+                        }
                         Navigator.pop(context);
                       },
-                      child: Text(
-                        widget.sidebarBranches[i]
-                            .substring(2, widget.sidebarBranches[i].length)
-                            .split(" -> ")
-                            .last,
-                        style: TextStyle(
-                            color: selectedColor(widget.sidebarBranches[i])),
+                      child: Stack(
+                        children: [
+                          Text(
+                            /*widget.sidebarBranches[i]
+                                .substring(2, widget.sidebarBranches[i].length)
+                                .split(" -> ")
+                                .last,*/
+                            (() {
+                              if (widget.sidebarBranches[i].contains("(")) {
+                                return widget.sidebarBranches[i]
+                                    .substring(
+                                        2, widget.sidebarBranches[i].length - 1)
+                                    .split(" ")
+                                    .last;
+                              } else {
+                                return widget.sidebarBranches[i]
+                                    .substring(
+                                        2, widget.sidebarBranches[i].length)
+                                    .split(" -> ")
+                                    .last;
+                              }
+                            }()),
+                            style: TextStyle(
+                                color:
+                                    selectedColor(widget.sidebarBranches[i])),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ],
             ],
+            GestureDetector(
+              child: const Text("+ Add New"),
+              onTap: () {
+                TextEditingController branchName = TextEditingController();
+                Future.delayed(
+                    const Duration(seconds: 0),
+                    () => showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('New Branch'),
+                            content: TextField(
+                              controller: branchName,
+                              decoration: const InputDecoration(
+                                hintText: "Branch Name (ex: 'master')",
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text("Cancel")),
+                              TextButton(
+                                  onPressed: () async {
+                                    Navigator.of(context).pop();
+
+                                    Process.run("git",
+                                        ["checkout", "-b", branchName.text],
+                                        workingDirectory:
+                                            widget.targetLocation);
+                                  },
+                                  child: const Text("Add")),
+                            ],
+                          );
+                        }));
+              },
+            ),
             const Padding(
               padding: EdgeInsets.only(
                   left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),

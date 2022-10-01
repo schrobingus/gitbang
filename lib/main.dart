@@ -323,18 +323,14 @@ class _MainState extends State<Main> {
                                   TextButton(
                                       onPressed: () async {
                                         Navigator.of(context).pop();
-                                        String commitMessageResult =
-                                            commitMessage.text;
-                                        List<String> commitCommand = ["commit"];
 
-                                        if (commitMessageResult != "") {
-                                          commitCommand.add("-m");
-                                          commitCommand.addAll(
-                                              "'$commitMessageResult'"
-                                                  .split(" "));
-                                        }
-
-                                        await Process.run("git", commitCommand,
+                                        await Process.run(
+                                            "git",
+                                            [
+                                              "commit",
+                                              "-m",
+                                              commitMessage.text
+                                            ],
                                             workingDirectory: _location);
 
                                         _refresh();
@@ -387,19 +383,8 @@ class _MainState extends State<Main> {
                                   TextButton(
                                       onPressed: () async {
                                         Navigator.of(context).pop();
-                                        String revertMessageResult =
-                                            revertMessage.text;
-                                        List<String> commitCommand = ["commit"];
-
-                                        if (revertMessageResult != "") {
-                                          commitCommand.add("-m");
-                                          commitCommand.addAll(
-                                              "'$revertMessageResult'"
-                                                  .split(" "));
-                                        }
 
                                         await Process.run(
-                                            // FIXME: Make sure it runs this afterwards.
                                             "git",
                                             [
                                               "revert",
@@ -408,7 +393,13 @@ class _MainState extends State<Main> {
                                             ],
                                             workingDirectory: _location);
 
-                                        await Process.run("git", commitCommand,
+                                        await Process.run(
+                                            "git",
+                                            [
+                                              "commit",
+                                              "-m",
+                                              revertMessage.text
+                                            ],
                                             workingDirectory: _location);
 
                                         _refresh();
@@ -464,11 +455,11 @@ class _MainState extends State<Main> {
                     "git", ["log", "--oneline"], // TODO: Split into pages.
                     workingDirectory: _location);
 
-                var pipeHead = await Process.start("head", ["-n", "10"]);
+                var pipeHead = await Process.start("head", ["-n", "25"]);
                 // This contains the number of entries from start before getting cut.
                 historyResult.stdout.pipe(pipeHead.stdin);
 
-                var pipeTail = await Process.start("tail", ["-n", "10"]);
+                var pipeTail = await Process.start("tail", ["-n", "25"]);
                 // This cuts out the entries at the end, returning a certain number of entries at a certain point.
                 pipeHead.stdout.pipe(pipeTail.stdin);
 

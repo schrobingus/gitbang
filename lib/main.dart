@@ -31,7 +31,7 @@ class _MainState extends State<Main> {
   List _currentDeleted = [];
 
   List _branches = [];
-  List _history = [];
+  final List _history = [];
 
   String _sidebarContentState = "";
 
@@ -182,64 +182,144 @@ class _MainState extends State<Main> {
         leading: SizedBox(
           width: 24,
           height: 24,
-          child: IconButton(
+          child: PopupMenuButton(
             padding: const EdgeInsets.all(0.0),
             icon: const Icon(
               Icons.add,
               size: 24.0,
             ),
-            tooltip: "Open Project",
-            onPressed: () async {
-              // TODO: Find the directory for a new project.
-              String? result = await FilePicker.platform.getDirectoryPath();
-              if (result != 'null') {
-                bool resultExists = await Directory(result!).exists();
-                bool resultIsGit = await Directory("$result/.git").exists();
-                if (resultExists) {
-                  if (resultIsGit) {
-                    setState(() {
-                      _location = result;
-                      _current = '';
-                    });
+            tooltip: "Load Repository",
+            itemBuilder: (context) => [
+              PopupMenuItem<int>(
+                child: const Text("Clone Repository"),
+                onTap: () async {
+                  TextEditingController repositoryToClone =
+                      TextEditingController();
+                  TextEditingController locationToCloneTo =
+                      TextEditingController();
 
-                    _refresh();
-                  } else {
-                    var alert = AlertDialog(
-                      title: const Text("New Repository"),
-                      content: const Text(
-                          "The following directory is not a Git repository. Would you like to initialize one here?"),
-                      actions: [
-                        TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text("No")),
-                        TextButton(
-                            onPressed: () async {
-                              Navigator.of(context).pop();
+                  Future.delayed(
+                      const Duration(seconds: 0),
+                      () => showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Clone Repository'),
+                              content: SizedBox(
+                                height: 100,
+                                child: Column(
+                                  children: [
+                                    TextField(
+                                      controller: repositoryToClone,
+                                      decoration: const InputDecoration(
+                                        hintText: "Repository",
+                                      ),
+                                    ),
+                                    TextField(
+                                      controller: locationToCloneTo,
+                                      decoration: InputDecoration(
+                                        hintText: "Location",
+                                        suffixIcon: IconButton(
+                                          icon: const Icon(
+                                              Icons.create_new_folder),
+                                          onPressed: () async {
+                                            locationToCloneTo.text =
+                                                (await FilePicker.platform
+                                                    .getDirectoryPath())!;
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text("Cancel")),
+                                TextButton(
+                                    onPressed: () async {
+                                      Navigator.of(context).pop();
 
-                              await Process.run("git", ["init"],
-                                  workingDirectory: result);
+                                      await Process.run("git",
+                                          ["clone", repositoryToClone.text],
+                                          workingDirectory:
+                                              locationToCloneTo.text);
 
-                              setState(() {
-                                _location = result;
-                                _current = '';
-                              });
-                              _refresh();
-                            },
-                            child: const Text("Yes")),
-                      ],
-                    );
+                                      setState(() {
+                                        var i = repositoryToClone.text
+                                            .split("/")
+                                            .last;
+                                        var j = locationToCloneTo.text;
 
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return alert;
+                                        _location = "$j/$i";
+                                        _current = '';
+                                      });
+
+                                      _refresh();
+                                    },
+                                    child: const Text("Clone")),
+                              ],
+                            );
+                          }));
+                },
+              ),
+              PopupMenuItem<int>(
+                child: const Text("Open Directory"),
+                onTap: () async {
+                  String? result = await FilePicker.platform.getDirectoryPath();
+                  if (result != 'null') {
+                    bool resultExists = await Directory(result!).exists();
+                    bool resultIsGit = await Directory("$result/.git").exists();
+                    if (resultExists) {
+                      if (resultIsGit) {
+                        setState(() {
+                          _location = result;
+                          _current = '';
                         });
+
+                        _refresh();
+                      } else {
+                        var alert = AlertDialog(
+                          title: const Text("New Repository"),
+                          content: const Text(
+                              "The following directory is not a Git repository. Would you like to initialize one here?"),
+                          actions: [
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text("No")),
+                            TextButton(
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+
+                                  await Process.run("git", ["init"],
+                                      workingDirectory: result);
+
+                                  setState(() {
+                                    _location = result;
+                                    _current = '';
+                                  });
+                                  _refresh();
+                                },
+                                child: const Text("Yes")),
+                          ],
+                        );
+
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return alert;
+                            });
+                      }
+                    }
                   }
-                }
-              }
-            },
+                },
+              ),
+            ],
           ),
         ),
         actions: [
@@ -455,27 +535,23 @@ class _MainState extends State<Main> {
                     "git", ["log", "--oneline"], // TODO: Split into pages.
                     workingDirectory: _location);
 
-                var pipeHead = await Process.start("head", ["-n", "25"]);
-                // This contains the number of entries from start before getting cut.
-                historyResult.stdout.pipe(pipeHead.stdin);
-
-                var pipeTail = await Process.start("tail", ["-n", "25"]);
-                // This cuts out the entries at the end, returning a certain number of entries at a certain point.
-                pipeHead.stdout.pipe(pipeTail.stdin);
-
-                pipeTail.stdout
+                historyResult.stdout
                     .transform(utf8.decoder)
                     .forEach((String out) => {
                           setState(() {
                             List i = const LineSplitter().convert(out);
 
-                            _history = [];
-                            for (var j = 0; j < i.length; j++) {
-                              var k = i[j].split(" ").first;
-                              _history.add([k, i[j].replaceAll("$k ", "")]);
+                            for (var l = 0; l < (i.length / 25).floor(); l++) {
+                              var historyCache = [];
+                              for (var j = l * 25; j < (l * 25) + 25; j++) {
+                                var k = i[j].split(" ").first;
+                                historyCache
+                                    .add([k, i[j].replaceAll("$k ", "")]);
+                              }
+                              _history.add(historyCache);
                             }
 
-                            //print(_history);
+                            //print();
                           }),
                         });
 
@@ -483,7 +559,6 @@ class _MainState extends State<Main> {
                   _sidebarContentState = "history";
                 });
                 _key.currentState!.openEndDrawer();
-                // TODO: Show the commit history on click.
               },
             ),
           ),
@@ -729,6 +804,8 @@ class Main extends StatefulWidget {
 }
 
 class _SidebarState extends State<Sidebar> {
+  var _historyPageNumber = 0;
+
   @override
   Widget build(BuildContext context) {
     Color selectedColor(String i) {
@@ -779,8 +856,7 @@ class _SidebarState extends State<Sidebar> {
                                     .split(" -> ")
                                     .last
                               ],
-                              workingDirectory: widget
-                                  .targetLocation); // TODO: Fix branching system.
+                              workingDirectory: widget.targetLocation);
                         }
 
                         if (!widget.sidebarBranches[i]
@@ -893,8 +969,7 @@ class _SidebarState extends State<Sidebar> {
                                     .split(" -> ")
                                     .last
                               ],
-                              workingDirectory: widget
-                                  .targetLocation); // TODO: Fix branching system.
+                              workingDirectory: widget.targetLocation);
                         }
 
                         checkoutBranch();
@@ -916,42 +991,86 @@ class _SidebarState extends State<Sidebar> {
           ] else if (widget.sidebarContent == "history") ...[
             Column(
               children: [
-                for (var i = 0; i < widget.sidebarHistory.length; i++) ...[
+                for (var i = 0; i < 25; i++) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(8),
-                        child: Text(widget.sidebarHistory[i][0]),
+                        child: Text(
+                            widget.sidebarHistoryInitialCut[_historyPageNumber]
+                                [i][0]),
                       ),
                       Flexible(
                         child: Padding(
                           padding: const EdgeInsets.all(8),
-                          child: Text(widget.sidebarHistory[i][1],
+                          child: Text(
+                              widget.sidebarHistoryInitialCut[
+                                  _historyPageNumber][i][1],
                               textAlign: TextAlign.right),
                         ),
                       ),
                     ],
                   ),
                 ],
+                Row(children: [
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_double_arrow_left),
+                    onPressed: () {
+                      setState(() {
+                        if (_historyPageNumber > 0) {
+                          _historyPageNumber = 0;
+                        }
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_left),
+                    onPressed: () {
+                      setState(() {
+                        _historyPageNumber--;
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_right),
+                    onPressed: () {
+                      setState(() {
+                        if (_historyPageNumber <
+                            widget.sidebarHistoryInitialCut.length - 1) {
+                          _historyPageNumber++;
+                        }
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_double_arrow_right),
+                    onPressed: () {
+                      setState(() {
+                        _historyPageNumber =
+                            widget.sidebarHistoryInitialCut.length - 1;
+                      });
+                    },
+                  ),
+                ]),
               ],
             ),
           ],
         ]),
       ),
-    ); // TODO: Extend sidebar for commit history.
+    );
   }
 }
 
 class Sidebar extends StatefulWidget {
   final String sidebarContent;
   final List sidebarBranches;
-  final List sidebarHistory;
+  final List sidebarHistoryInitialCut;
   final String targetLocation;
 
-  const Sidebar(this.sidebarContent, this.sidebarBranches, this.sidebarHistory,
-      this.targetLocation);
+  const Sidebar(this.sidebarContent, this.sidebarBranches,
+      this.sidebarHistoryInitialCut, this.targetLocation);
 
   @override
   State<Sidebar> createState() => _SidebarState();

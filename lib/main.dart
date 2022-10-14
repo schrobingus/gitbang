@@ -7,6 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
+// Import the created scripts.
+import 'package:feta/dialogs/clone_repository.dart';
+import 'package:feta/dialogs/new_repository.dart';
+import 'package:feta/dialogs/new_commit.dart';
+import 'package:feta/dialogs/revert_commit.dart';
+import 'package:feta/sidebar/main.dart';
+
 void main() => runApp(App());
 
 class App extends StatelessWidget {
@@ -106,8 +113,6 @@ class _MainState extends State<Main> {
       _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
       _currentDataAndDeleted.sort();
     });
-
-    //print(_currentDataAndDeleted);
   }
 
   void _refresh() async {
@@ -123,6 +128,49 @@ class _MainState extends State<Main> {
         workingDirectory: _location);
 
     _currentUpdate(deletedResult, stagedResult, unstagedResult);
+  }
+
+  void _cloneRepository(
+      String repositoryToClone, String locationToCloneTo) async {
+    await Process.run("git", ["clone", repositoryToClone],
+        workingDirectory: locationToCloneTo);
+
+    setState(() {
+      var i = repositoryToClone.split("/").last;
+      var j = locationToCloneTo;
+
+      _location = "$j/$i";
+      _current = '';
+    });
+
+    _refresh();
+  }
+
+  void _newRepository(String result) async {
+    await Process.run("git", ["init"], workingDirectory: result);
+
+    setState(() {
+      _location = result;
+      _current = '';
+    });
+    _refresh();
+  }
+
+  void _newCommit(String commitMessage) async {
+    await Process.run("git", ["commit", "-m", commitMessage],
+        workingDirectory: _location);
+
+    _refresh();
+  }
+
+  void _revertCommit(String revertCommit, String revertMessage) async {
+    await Process.run("git", ["revert", "--no-commit", revertCommit],
+        workingDirectory: _location);
+
+    await Process.run("git", ["commit", "-m", revertMessage],
+        workingDirectory: _location);
+
+    _refresh();
   }
 
   final GlobalKey<ScaffoldState> _key = GlobalKey();
@@ -193,76 +241,13 @@ class _MainState extends State<Main> {
               PopupMenuItem<int>(
                 child: const Text("Clone Repository"),
                 onTap: () async {
-                  TextEditingController repositoryToClone =
-                      TextEditingController();
-                  TextEditingController locationToCloneTo =
-                      TextEditingController();
-
                   Future.delayed(
                       const Duration(seconds: 0),
                       () => showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('Clone Repository'),
-                              content: SizedBox(
-                                height: 100,
-                                child: Column(
-                                  children: [
-                                    TextField(
-                                      controller: repositoryToClone,
-                                      decoration: const InputDecoration(
-                                        hintText: "Repository",
-                                      ),
-                                    ),
-                                    TextField(
-                                      controller: locationToCloneTo,
-                                      decoration: InputDecoration(
-                                        hintText: "Location",
-                                        suffixIcon: IconButton(
-                                          icon: const Icon(
-                                              Icons.create_new_folder),
-                                          onPressed: () async {
-                                            locationToCloneTo.text =
-                                                (await FilePicker.platform
-                                                    .getDirectoryPath())!;
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: const Text("Cancel")),
-                                TextButton(
-                                    onPressed: () async {
-                                      Navigator.of(context).pop();
-
-                                      await Process.run("git",
-                                          ["clone", repositoryToClone.text],
-                                          workingDirectory:
-                                              locationToCloneTo.text);
-
-                                      setState(() {
-                                        var i = repositoryToClone.text
-                                            .split("/")
-                                            .last;
-                                        var j = locationToCloneTo.text;
-
-                                        _location = "$j/$i";
-                                        _current = '';
-                                      });
-
-                                      _refresh();
-                                    },
-                                    child: const Text("Clone")),
-                              ],
-                            );
+                            return cloneRepositoryDialog(
+                                context, _cloneRepository);
                           }));
                 },
               ),
@@ -282,37 +267,11 @@ class _MainState extends State<Main> {
 
                         _refresh();
                       } else {
-                        var alert = AlertDialog(
-                          title: const Text("New Repository"),
-                          content: const Text(
-                              "The following directory is not a Git repository. Would you like to initialize one here?"),
-                          actions: [
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text("No")),
-                            TextButton(
-                                onPressed: () async {
-                                  Navigator.of(context).pop();
-
-                                  await Process.run("git", ["init"],
-                                      workingDirectory: result);
-
-                                  setState(() {
-                                    _location = result;
-                                    _current = '';
-                                  });
-                                  _refresh();
-                                },
-                                child: const Text("Yes")),
-                          ],
-                        );
-
                         showDialog(
                             context: context,
                             builder: (BuildContext context) {
-                              return alert;
+                              return newRepoDialog(
+                                  context, _newRepository, result);
                             });
                       }
                     }
@@ -336,157 +295,28 @@ class _MainState extends State<Main> {
                 PopupMenuItem<int>(
                   child: const Text("New Commit"),
                   onTap: () {
-                    TextEditingController commitMessage =
-                        TextEditingController();
                     String commitChanges =
                         _currentDataStaged.join("\n").replaceAll(_location, "");
+
                     Future.delayed(
                         const Duration(seconds: 0),
                         () => showDialog(
                             context: context,
                             builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text('New Commit'),
-                                content: SizedBox(
-                                  height: 200,
-                                  child: Column(
-                                    children: [
-                                      TextField(
-                                        controller: commitMessage,
-                                        decoration: const InputDecoration(
-                                          hintText: "Message",
-                                        ),
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.only(
-                                            top: 30.0, bottom: 5.0),
-                                        child: Align(
-                                          alignment: Alignment.topLeft,
-                                          child: Text("Items to be committed:"),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 240,
-                                        constraints: const BoxConstraints(
-                                          minHeight: 80,
-                                        ),
-                                        decoration: BoxDecoration(
-                                            border: Border.all(
-                                          color: Colors.black,
-                                          width: 1,
-                                        )),
-                                        child: SingleChildScrollView(
-                                          child: SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(4.0),
-                                              child: Text(
-                                                commitChanges,
-                                                style: const TextStyle(
-                                                  fontSize: 12.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text("Cancel")),
-                                  TextButton(
-                                      onPressed: () async {
-                                        Navigator.of(context).pop();
-
-                                        await Process.run(
-                                            "git",
-                                            [
-                                              "commit",
-                                              "-m",
-                                              commitMessage.text
-                                            ],
-                                            workingDirectory: _location);
-
-                                        _refresh();
-                                      },
-                                      child: const Text("Apply")),
-                                ],
-                              );
+                              return newCommitDialog(
+                                  context, _newCommit, commitChanges);
                             }));
                   },
                 ),
                 PopupMenuItem<int>(
                   child: const Text("Revert Commit"),
                   onTap: () {
-                    TextEditingController revertMessage =
-                        TextEditingController();
-                    TextEditingController revertCommit =
-                        TextEditingController();
                     Future.delayed(
                         const Duration(seconds: 0),
                         () => showDialog(
                             context: context,
                             builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text('Revert Commit'),
-                                content: SizedBox(
-                                  height: 100,
-                                  child: Column(
-                                    children: [
-                                      TextField(
-                                        controller: revertCommit,
-                                        decoration: const InputDecoration(
-                                          hintText: "Commit (ex: f668902)",
-                                        ),
-                                      ),
-                                      TextField(
-                                        controller: revertMessage,
-                                        decoration: const InputDecoration(
-                                          hintText: "Message",
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text("Cancel")),
-                                  TextButton(
-                                      onPressed: () async {
-                                        Navigator.of(context).pop();
-
-                                        await Process.run(
-                                            "git",
-                                            [
-                                              "revert",
-                                              "--no-commit",
-                                              revertCommit.text
-                                            ],
-                                            workingDirectory: _location);
-
-                                        await Process.run(
-                                            "git",
-                                            [
-                                              "commit",
-                                              "-m",
-                                              revertMessage.text
-                                            ],
-                                            workingDirectory: _location);
-
-                                        _refresh();
-                                      },
-                                      child: const Text("Apply")),
-                                ],
-                              );
+                              return revertCommitDialog(context, _revertCommit);
                             }));
                   },
                 ),
@@ -801,277 +631,4 @@ class Main extends StatefulWidget {
 
   @override
   State<Main> createState() => _MainState();
-}
-
-class _SidebarState extends State<Sidebar> {
-  var _historyPageNumber = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    Color selectedColor(String i) {
-      if (i[0] == '*') {
-        if (i.contains("detached")) {
-          return Colors.red;
-        } else {
-          return Colors.blue;
-        }
-      } else {
-        return Colors.black;
-      }
-    }
-
-    return Drawer(
-      child: SingleChildScrollView(
-        child: Column(children: [
-          if (widget.sidebarContent == "branches") ...[
-            const Padding(
-              padding: EdgeInsets.only(
-                  left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text("Local"),
-              ),
-            ),
-            for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
-              if (!widget.sidebarBranches[i]
-                  .substring(2, widget.sidebarBranches[i].length)
-                  .split(" -> ")
-                  .last
-                  .startsWith("remotes/")) ...[
-                Padding(
-                  padding: const EdgeInsets.only(
-                      left: 10.0, right: 10.0, top: 5.0, bottom: 5.0),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: GestureDetector(
-                      onTap: () {
-                        void checkoutBranch() async {
-                          await Process.start(
-                              "git",
-                              [
-                                "checkout",
-                                widget.sidebarBranches[i]
-                                    .substring(
-                                        2, widget.sidebarBranches[i].length)
-                                    .split(" -> ")
-                                    .last
-                              ],
-                              workingDirectory: widget.targetLocation);
-                        }
-
-                        if (!widget.sidebarBranches[i]
-                            .substring(2, widget.sidebarBranches[i].length)
-                            .startsWith("(")) {
-                          checkoutBranch();
-                        }
-                        Navigator.pop(context);
-                      },
-                      child: Stack(
-                        children: [
-                          Text(
-                            /*widget.sidebarBranches[i]
-                                .substring(2, widget.sidebarBranches[i].length)
-                                .split(" -> ")
-                                .last,*/
-                            (() {
-                              if (widget.sidebarBranches[i].contains("(")) {
-                                return widget.sidebarBranches[i]
-                                    .substring(
-                                        2, widget.sidebarBranches[i].length - 1)
-                                    .split(" ")
-                                    .last;
-                              } else {
-                                return widget.sidebarBranches[i]
-                                    .substring(
-                                        2, widget.sidebarBranches[i].length)
-                                    .split(" -> ")
-                                    .last;
-                              }
-                            }()),
-                            style: TextStyle(
-                                color:
-                                    selectedColor(widget.sidebarBranches[i])),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-            GestureDetector(
-              child: const Text("+ Add New"),
-              onTap: () {
-                TextEditingController branchName = TextEditingController();
-                Future.delayed(
-                    const Duration(seconds: 0),
-                    () => showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('New Branch'),
-                            content: TextField(
-                              controller: branchName,
-                              decoration: const InputDecoration(
-                                hintText: "Branch Name (ex: 'master')",
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text("Cancel")),
-                              TextButton(
-                                  onPressed: () async {
-                                    Navigator.of(context).pop();
-
-                                    Process.run("git",
-                                        ["checkout", "-b", branchName.text],
-                                        workingDirectory:
-                                            widget.targetLocation);
-                                  },
-                                  child: const Text("Add")),
-                            ],
-                          );
-                        }));
-              },
-            ),
-            const Padding(
-              padding: EdgeInsets.only(
-                  left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text("Remote"),
-              ),
-            ),
-            for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
-              if (widget.sidebarBranches[i]
-                  .substring(2, widget.sidebarBranches[i].length)
-                  .split(" -> ")
-                  .last
-                  .startsWith("remotes/")) ...[
-                Padding(
-                  padding: const EdgeInsets.only(
-                      left: 10.0, right: 10.0, top: 5.0, bottom: 5.0),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: GestureDetector(
-                      onTap: () {
-                        void checkoutBranch() async {
-                          await Process.start(
-                              "git",
-                              [
-                                "checkout",
-                                widget.sidebarBranches[i]
-                                    .substring(
-                                        2, widget.sidebarBranches[i].length)
-                                    .split(" -> ")
-                                    .last
-                              ],
-                              workingDirectory: widget.targetLocation);
-                        }
-
-                        checkoutBranch();
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        widget.sidebarBranches[i]
-                            .substring(2, widget.sidebarBranches[i].length)
-                            .split(" -> ")
-                            .last,
-                        style: TextStyle(
-                            color: selectedColor(widget.sidebarBranches[i])),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ] else if (widget.sidebarContent == "history") ...[
-            Column(
-              children: [
-                for (var i = 0; i < 25; i++) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                            widget.sidebarHistoryInitialCut[_historyPageNumber]
-                                [i][0]),
-                      ),
-                      Flexible(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                              widget.sidebarHistoryInitialCut[
-                                  _historyPageNumber][i][1],
-                              textAlign: TextAlign.right),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                Row(children: [
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_double_arrow_left),
-                    onPressed: () {
-                      setState(() {
-                        if (_historyPageNumber > 0) {
-                          _historyPageNumber = 0;
-                        }
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_arrow_left),
-                    onPressed: () {
-                      setState(() {
-                        _historyPageNumber--;
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_arrow_right),
-                    onPressed: () {
-                      setState(() {
-                        if (_historyPageNumber <
-                            widget.sidebarHistoryInitialCut.length - 1) {
-                          _historyPageNumber++;
-                        }
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_double_arrow_right),
-                    onPressed: () {
-                      setState(() {
-                        _historyPageNumber =
-                            widget.sidebarHistoryInitialCut.length - 1;
-                      });
-                    },
-                  ),
-                ]),
-              ],
-            ),
-          ],
-        ]),
-      ),
-    );
-  }
-}
-
-class Sidebar extends StatefulWidget {
-  final String sidebarContent;
-  final List sidebarBranches;
-  final List sidebarHistoryInitialCut;
-  final String targetLocation;
-
-  const Sidebar(this.sidebarContent, this.sidebarBranches,
-      this.sidebarHistoryInitialCut, this.targetLocation);
-
-  @override
-  State<Sidebar> createState() => _SidebarState();
 }

@@ -43,7 +43,9 @@ class _MainState extends State<Main> {
   String _sidebarContentState = "";
 
   void _currentUpdate(
-      var deletedResult, var stagedResult, var unstagedResult) async {
+      var deletedUnstagedResult, var deletedStagedResult, var stagedResult, var unstagedResult) async {
+    // TODO: Possibility of using 'git status --short' over running each command for optimization.
+    // Refer to Renzix' comment.
     _currentData = [];
 
     List i = Directory("$_location$_current").listSync(
@@ -69,13 +71,17 @@ class _MainState extends State<Main> {
       _currentData.sort();
     });
 
-    await deletedResult.stdout.transform(utf8.decoder).forEach((String out) => {
+    await deletedUnstagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
           _currentDeleted = const LineSplitter().convert(out),
         });
 
+    await deletedStagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
+      _currentDeleted.addAll(const LineSplitter().convert(out)),
+    });
+
     await stagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
           _currentDataStaged = const LineSplitter().convert(out),
-          // TODO: Include deleted files when staged.
+          // DONE: Include deleted files when staged.
         });
 
     await unstagedResult.stdout
@@ -101,6 +107,48 @@ class _MainState extends State<Main> {
       }
 
       for (var i = 0; i < _currentDataStaged.length; i++) {
+        var j = _currentDataStaged[i].split("/");
+        var k = "";
+
+        while (j.length != 1) {
+          j.remove(j.last);
+
+          for (var l = 0; l < j.length; l++) {
+            if (l == 0) {
+              k = j[l];
+            } else {
+              var m = j[l];
+              k = "$k/$m";
+            }
+          }
+
+          _currentDataStaged.add(k);
+          // FIXME: Make less repetitive. Unimportant, but for optimizations sake.
+        }
+      }
+
+      for (var i = 0; i < _currentDataUnstaged.length; i++) {
+        var j = _currentDataUnstaged[i].split("/");
+        var k = "";
+
+        while (j.length != 1) {
+          j.remove(j.last);
+
+          for (var l = 0; l < j.length; l++) {
+            if (l == 0) {
+              k = j[l];
+            } else {
+              var m = j[l];
+              k = "$k/$m";
+            }
+          }
+
+          _currentDataUnstaged.add(k);
+          // FIXME: Likewise.
+        }
+      }
+
+      for (var i = 0; i < _currentDataStaged.length; i++) {
         var l = _currentDataStaged[i];
         _currentDataStaged[i] = "$_location/$l";
       }
@@ -116,7 +164,10 @@ class _MainState extends State<Main> {
   }
 
   void _refresh() async {
-    var deletedResult = await Process.start("git", ["ls-files", "--deleted"],
+    var deletedUnstagedResult = await Process.start("git", ["ls-files", "--deleted"],
+        workingDirectory: _location);
+
+    var deletedStagedResult = await Process.start("git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
         workingDirectory: _location);
 
     var stagedResult = await Process.start(
@@ -127,7 +178,7 @@ class _MainState extends State<Main> {
         "git", ["ls-files", "--exclude-standard", "--others", "-m"],
         workingDirectory: _location);
 
-    _currentUpdate(deletedResult, stagedResult, unstagedResult);
+    _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult, unstagedResult);
   }
 
   void _cloneRepository(
@@ -343,11 +394,11 @@ class _MainState extends State<Main> {
                     _refresh();
                   },
                 ),
-                const PopupMenuDivider(),
+                /*const PopupMenuDivider(),
                 PopupMenuItem<int>(
                   child: const Text("Preferences"),
                   onTap: () {},
-                ),
+                ),*/
               ],
             ),
           ),

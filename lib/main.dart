@@ -36,14 +36,12 @@ class _MainState extends State<Main> {
   List _currentDataStaged = [];
   List _currentDataUnstaged = [];
   List _currentDeleted = [];
-
   List _branches = [];
-  final List _history = [];
 
   String _sidebarContentState = "";
 
-  void _currentUpdate(
-      var deletedUnstagedResult, var deletedStagedResult, var stagedResult, var unstagedResult) async {
+  void _currentUpdate(var deletedUnstagedResult, var deletedStagedResult,
+      var stagedResult, var unstagedResult) async {
     // TODO: Possibility of using 'git status --short' over running each command for optimization.
     // Refer to Renzix' comment.
     _currentData = [];
@@ -71,13 +69,17 @@ class _MainState extends State<Main> {
       _currentData.sort();
     });
 
-    await deletedUnstagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
-          _currentDeleted = const LineSplitter().convert(out),
-        });
+    await deletedUnstagedResult.stdout
+        .transform(utf8.decoder)
+        .forEach((String out) => {
+              _currentDeleted = const LineSplitter().convert(out),
+            });
 
-    await deletedStagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
-      _currentDeleted.addAll(const LineSplitter().convert(out)),
-    });
+    await deletedStagedResult.stdout
+        .transform(utf8.decoder)
+        .forEach((String out) => {
+              _currentDeleted.addAll(const LineSplitter().convert(out)),
+            });
 
     await stagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
           _currentDataStaged = const LineSplitter().convert(out),
@@ -106,6 +108,7 @@ class _MainState extends State<Main> {
         }
       }
 
+      // TODO: Make separate variable that excludes the directories.
       for (var i = 0; i < _currentDataStaged.length; i++) {
         var j = _currentDataStaged[i].split("/");
         var k = "";
@@ -164,10 +167,12 @@ class _MainState extends State<Main> {
   }
 
   void _refresh() async {
-    var deletedUnstagedResult = await Process.start("git", ["ls-files", "--deleted"],
+    var deletedUnstagedResult = await Process.start(
+        "git", ["ls-files", "--deleted"],
         workingDirectory: _location);
 
-    var deletedStagedResult = await Process.start("git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
+    var deletedStagedResult = await Process.start(
+        "git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
         workingDirectory: _location);
 
     var stagedResult = await Process.start(
@@ -178,7 +183,8 @@ class _MainState extends State<Main> {
         "git", ["ls-files", "--exclude-standard", "--others", "-m"],
         workingDirectory: _location);
 
-    _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult, unstagedResult);
+    _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult,
+        unstagedResult);
   }
 
   void _cloneRepository(
@@ -412,7 +418,7 @@ class _MainState extends State<Main> {
               ),
               tooltip: "Commit History",
               onPressed: () async {
-                var historyResult = await Process.start(
+                /*var historyResult = await Process.start(
                     "git", ["log", "--oneline"], // TODO: Split into pages.
                     workingDirectory: _location);
 
@@ -434,7 +440,7 @@ class _MainState extends State<Main> {
 
                             //print();
                           }),
-                        });
+                        });*/
 
                 setState(() {
                   _sidebarContentState = "history";
@@ -667,7 +673,7 @@ class _MainState extends State<Main> {
           ]),
         ),
       ),
-      endDrawer: Sidebar(_sidebarContentState, _branches, _history, _location),
+      endDrawer: Sidebar(_sidebarContentState, _branches, _location),
       onEndDrawerChanged: (isOpen) async {
         if (!isOpen) {
           _refresh();

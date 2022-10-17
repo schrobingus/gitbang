@@ -43,26 +43,10 @@ class _SidebarState extends State<Sidebar> {
                 _historyPageList = [];
                 var x = const LineSplitter().convert(out);
 
-                /*late var y;
-                if (_historyEntryAmount > 25) {
-                  y = 25;
-                } else {
-                  y = _historyEntryAmount;
-                }*/
-
                 for (var i = 0; i < x.length; i++) {
                   var j = x[i].split(" ").first;
                   _historyPageList.add([j, x[i].replaceAll("$j ", "")]);
                 }
-
-                /*if (y == 25 && _historyPageNumber == _historyPageAmount - 1) {
-                  var k = ((_historyEntryAmount % 25) - 25).abs() - 1;
-                  for (var i = 24; i >= 0; i--) {
-                    if (i <= k) {
-                      _historyPageList.removeAt(0);
-                    }
-                  }
-                }*/
               }),
             });
   }

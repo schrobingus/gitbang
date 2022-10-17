@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 class _SidebarState extends State<Sidebar> {
   var _historyPageNumber = 0;
   var _historyPageList = [];
-  late var _historyEntryAmount;
-  late var _historyPageAmount;
+  double _historyEntryAmount = 0;
+  var _historyPageAmount = 0;
 
+  // FIXME: Fix random crashing. Root of the problem is unknown.
   Future<void> refreshPage() async {
     var historyCommand = await Process.start("git", ["log", "--oneline"],
         workingDirectory: widget.targetLocation);
@@ -18,12 +19,21 @@ class _SidebarState extends State<Sidebar> {
         .forEach((String out) => _historyEntryAmount = double.parse(out));
     _historyPageAmount = (_historyEntryAmount / 25).ceil();
 
+    double historyPageTailEnsure = 0;
+    if (_historyPageNumber == _historyPageAmount - 1 &&
+        _historyEntryAmount / 25 != (_historyEntryAmount / 25).ceil()) {
+      historyPageTailEnsure = _historyEntryAmount % 25;
+    } else {
+      historyPageTailEnsure = 25;
+    }
+
     var historyCommandNext = await Process.start("git", ["log", "--oneline"],
         workingDirectory: widget.targetLocation);
     var historyPageHead = await Process.start(
         "head", ["-n", ((_historyPageNumber + 1) * 25).toString()]);
     historyCommandNext.stdout.pipe(historyPageHead.stdin);
-    var historyPageTail = await Process.start("tail", ["-n", "25"]);
+    var historyPageTail = await Process.start(
+        "tail", ["-n", historyPageTailEnsure.toInt().toString()]);
     historyPageHead.stdout.pipe(historyPageTail.stdin);
 
     await historyPageTail.stdout
@@ -33,26 +43,26 @@ class _SidebarState extends State<Sidebar> {
                 _historyPageList = [];
                 var x = const LineSplitter().convert(out);
 
-                late var y;
+                /*late var y;
                 if (_historyEntryAmount > 25) {
                   y = 25;
                 } else {
                   y = _historyEntryAmount;
-                }
+                }*/
 
-                for (var i = 0; i < y; i++) {
+                for (var i = 0; i < x.length; i++) {
                   var j = x[i].split(" ").first;
                   _historyPageList.add([j, x[i].replaceAll("$j ", "")]);
                 }
 
-                if (y == 25 && _historyPageNumber == _historyPageAmount - 1) {
+                /*if (y == 25 && _historyPageNumber == _historyPageAmount - 1) {
                   var k = ((_historyEntryAmount % 25) - 25).abs() - 1;
                   for (var i = 24; i >= 0; i--) {
                     if (i <= k) {
                       _historyPageList.removeAt(0);
                     }
                   }
-                }
+                }*/
               }),
             });
   }

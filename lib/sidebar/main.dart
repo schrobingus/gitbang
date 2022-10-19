@@ -8,8 +8,14 @@ class _SidebarState extends State<Sidebar> {
   double _historyEntryAmount = 0;
   var _historyPageAmount = 0;
 
+  bool _showHistory = false;
+
   // FIXME: Fix random crashing. Root of the problem is unknown.
   Future<void> refreshPage() async {
+    setState(() {
+      _showHistory = false;
+    });
+
     var historyCommand = await Process.start("git", ["log", "--oneline"],
         workingDirectory: widget.targetLocation);
     var historyPageAmountPipe = await Process.start("wc", ["-l"]);
@@ -49,6 +55,10 @@ class _SidebarState extends State<Sidebar> {
                 }
               }),
             });
+
+    setState(() {
+      _showHistory = true;
+    });
   }
 
   @override
@@ -244,24 +254,30 @@ class _SidebarState extends State<Sidebar> {
           ] else if (widget.sidebarContent == "history") ...[
             Column(
               children: [
-                for (var i = 0; i < _historyPageList.length; i++) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(_historyPageList[i][0]),
-                      ),
-                      Flexible(
-                        child: Padding(
+                if (_showHistory) ...[
+                  for (var i = 0; i < _historyPageList.length; i++) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
                           padding: const EdgeInsets.all(8),
-                          child: Text(_historyPageList[i][1],
-                              textAlign: TextAlign.right),
+                          child: Text(_historyPageList[i][0]),
                         ),
-                      ),
-                    ],
-                  ),
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Text(_historyPageList[i][1],
+                                textAlign: TextAlign.right),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ] else ...[
+                  const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Center(child: CircularProgressIndicator())),
                 ],
                 if (_historyPageAmount != 1) ...[
                   Row(
@@ -301,7 +317,7 @@ class _SidebarState extends State<Sidebar> {
                         Padding(
                           padding: const EdgeInsets.all(12),
                           child: Text(
-                            "$_historyPageNumber",
+                            "${_historyPageNumber + 1}/$_historyPageAmount",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),

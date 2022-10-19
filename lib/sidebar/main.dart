@@ -54,7 +54,9 @@ class _SidebarState extends State<Sidebar> {
   @override
   void initState() {
     super.initState();
-    refreshPage();
+    if (widget.sidebarContent == "history") {
+      refreshPage();
+    }
   }
 
   @override
@@ -261,78 +263,81 @@ class _SidebarState extends State<Sidebar> {
                     ],
                   ),
                 ],
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: IconButton(
-                          icon: const Icon(Icons.keyboard_double_arrow_left),
-                          padding: const EdgeInsets.all(0.0),
-                          onPressed: () {
-                            setState(() {
-                              _historyPageNumber = 0;
-                            });
-                            refreshPage();
-                          },
+                if (_historyPageAmount != 1) ...[
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: IconButton(
+                            icon: const Icon(Icons.keyboard_double_arrow_left),
+                            padding: const EdgeInsets.all(0.0),
+                            onPressed: () {
+                              setState(() {
+                                _historyPageNumber = 0;
+                              });
+                              refreshPage();
+                            },
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: IconButton(
-                          icon: const Icon(Icons.keyboard_arrow_left),
-                          padding: const EdgeInsets.all(0.0),
-                          onPressed: () {
-                            setState(() {
-                              if (_historyPageNumber > 0) {
-                                _historyPageNumber--;
-                              }
-                            });
-                            refreshPage();
-                          },
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: IconButton(
+                            icon: const Icon(Icons.keyboard_arrow_left),
+                            padding: const EdgeInsets.all(0.0),
+                            onPressed: () {
+                              setState(() {
+                                if (_historyPageNumber > 0) {
+                                  _historyPageNumber--;
+                                }
+                              });
+                              refreshPage();
+                            },
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          "$_historyPageNumber",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            "$_historyPageNumber",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: IconButton(
-                          icon: const Icon(Icons.keyboard_arrow_right),
-                          padding: const EdgeInsets.all(0.0),
-                          onPressed: () {
-                            setState(() {
-                              if (_historyPageNumber < _historyPageAmount - 1) {
-                                _historyPageNumber++;
-                              }
-                            });
-                            refreshPage();
-                          },
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: IconButton(
+                            icon: const Icon(Icons.keyboard_arrow_right),
+                            padding: const EdgeInsets.all(0.0),
+                            onPressed: () {
+                              setState(() {
+                                if (_historyPageNumber <
+                                    _historyPageAmount - 1) {
+                                  _historyPageNumber++;
+                                }
+                              });
+                              refreshPage();
+                            },
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: IconButton(
-                          icon: const Icon(Icons.keyboard_double_arrow_right),
-                          padding: const EdgeInsets.all(0.0),
-                          onPressed: () {
-                            setState(() {
-                              _historyPageNumber = _historyPageAmount - 1;
-                            });
-                            refreshPage();
-                          },
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: IconButton(
+                            icon: const Icon(Icons.keyboard_double_arrow_right),
+                            padding: const EdgeInsets.all(0.0),
+                            onPressed: () {
+                              setState(() {
+                                _historyPageNumber = _historyPageAmount - 1;
+                              });
+                              refreshPage();
+                            },
+                          ),
                         ),
-                      ),
-                    ]),
+                      ])
+                ],
               ],
             ),
           ],

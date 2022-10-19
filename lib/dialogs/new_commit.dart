@@ -25,9 +25,7 @@ AlertDialog newCommitDialog(
           ),
           Container(
             width: 240,
-            constraints: const BoxConstraints(
-              maxHeight: 80,
-            ),
+            height: 80,
             decoration: BoxDecoration(
                 border: Border.all(
               color: Colors.black,

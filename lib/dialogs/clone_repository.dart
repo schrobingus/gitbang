@@ -43,7 +43,19 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
       TextButton(
           onPressed: () async {
             Navigator.of(context).pop();
-            cloneRepoFunction(repositoryToClone.text, locationToCloneTo.text);
+
+            late BuildContext loadingContext;
+            showDialog(
+                barrierDismissible: false,
+                context: context,
+                builder: (BuildContext context) {
+                  loadingContext = context;
+                  return const Center(child: CircularProgressIndicator());
+                });
+
+            await cloneRepoFunction(
+                repositoryToClone.text, locationToCloneTo.text);
+            Navigator.of(loadingContext).pop();
           },
           child: const Text("Clone")),
     ],

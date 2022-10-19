@@ -34,6 +34,7 @@ class _MainState extends State<Main> {
   late List _currentData;
   late List _currentDataAndDeleted;
   List _currentDataStaged = [];
+  late List _currentDataStagedFilesOnly;
   List _currentDataUnstaged = [];
   List _currentDeleted = [];
   List _branches = [];
@@ -107,8 +108,11 @@ class _MainState extends State<Main> {
           _currentDeleted.removeAt(i);
         }
       }
+    });
 
-      // TODO: Make separate variable that excludes the directories.
+    var filesOnly = List.from(_currentDataStaged);
+
+    setState(() {
       for (var i = 0; i < _currentDataStaged.length; i++) {
         var j = _currentDataStaged[i].split("/");
         var k = "";
@@ -126,7 +130,6 @@ class _MainState extends State<Main> {
           }
 
           _currentDataStaged.add(k);
-          // FIXME: Make less repetitive. Unimportant, but for optimizations sake.
         }
       }
 
@@ -147,7 +150,6 @@ class _MainState extends State<Main> {
           }
 
           _currentDataUnstaged.add(k);
-          // FIXME: Likewise.
         }
       }
 
@@ -163,10 +165,12 @@ class _MainState extends State<Main> {
 
       _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
       _currentDataAndDeleted.sort();
+
+      _currentDataStagedFilesOnly = filesOnly;
     });
   }
 
-  void _refresh() async {
+  Future<void> _refresh() async {
     var deletedUnstagedResult = await Process.start(
         "git", ["ls-files", "--deleted"],
         workingDirectory: _location);
@@ -187,7 +191,7 @@ class _MainState extends State<Main> {
         unstagedResult);
   }
 
-  void _cloneRepository(
+  Future<void> _cloneRepository(
       String repositoryToClone, String locationToCloneTo) async {
     await Process.run("git", ["clone", repositoryToClone],
         workingDirectory: locationToCloneTo);
@@ -322,7 +326,7 @@ class _MainState extends State<Main> {
                           _current = '';
                         });
 
-                        _refresh();
+                        await _refresh();
                       } else {
                         showDialog(
                             context: context,
@@ -352,8 +356,9 @@ class _MainState extends State<Main> {
                 PopupMenuItem<int>(
                   child: const Text("New Commit"),
                   onTap: () {
-                    String commitChanges =
-                        _currentDataStaged.join("\n").replaceAll(_location, "");
+                    String commitChanges = _currentDataStagedFilesOnly
+                        .join("\n")
+                        .replaceAll(_location, "");
 
                     Future.delayed(
                         const Duration(seconds: 0),
@@ -381,17 +386,45 @@ class _MainState extends State<Main> {
                 PopupMenuItem<int>(
                   child: const Text("Pull Commits"),
                   onTap: () async {
+                    late BuildContext loadingContext;
+                    Future.delayed(
+                        const Duration(seconds: 0),
+                        () => showDialog(
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (BuildContext context) {
+                              loadingContext = context;
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }));
+
                     await Process.run("git", ["pull"],
                         workingDirectory: _location);
-                    _refresh();
+                    await _refresh();
+
+                    Navigator.of(loadingContext).pop();
                   },
                 ),
                 PopupMenuItem<int>(
                   child: const Text("Push Commits"),
                   onTap: () async {
+                    late BuildContext loadingContext;
+                    Future.delayed(
+                        const Duration(seconds: 0),
+                        () => showDialog(
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (BuildContext context) {
+                              loadingContext = context;
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }));
+
                     await Process.run("git", ["push"],
                         workingDirectory: _location);
-                    // Unneeded to refresh since nothing local is affected.
+                    // Unneeded to refresh since nothing is affected locally.
+
+                    Navigator.of(loadingContext).pop();
                   },
                 ),
                 PopupMenuItem<int>(
@@ -418,30 +451,6 @@ class _MainState extends State<Main> {
               ),
               tooltip: "Commit History",
               onPressed: () async {
-                /*var historyResult = await Process.start(
-                    "git", ["log", "--oneline"], // TODO: Split into pages.
-                    workingDirectory: _location);
-
-                historyResult.stdout
-                    .transform(utf8.decoder)
-                    .forEach((String out) => {
-                          setState(() {
-                            List i = const LineSplitter().convert(out);
-
-                            for (var l = 0; l < (i.length / 25).floor(); l++) {
-                              var historyCache = [];
-                              for (var j = l * 25; j < (l * 25) + 25; j++) {
-                                var k = i[j].split(" ").first;
-                                historyCache
-                                    .add([k, i[j].replaceAll("$k ", "")]);
-                              }
-                              _history.add(historyCache);
-                            }
-
-                            //print();
-                          }),
-                        });*/
-
                 setState(() {
                   _sidebarContentState = "history";
                 });

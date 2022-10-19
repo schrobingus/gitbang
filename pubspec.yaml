@@ -1,4 +1,4 @@
-name: feta
+name: gitbang
 description: A Git GUI frontend written in Flutter, with the goal to be simplistic and well integrated.
 
 # The following line prevents the package from being accidentally published to
@@ -32,8 +32,6 @@ dependencies:
   collection: ^1.16.0
   cupertino_icons: ^1.0.2
   file_picker: ^5.0.1
-  git: ^2.0.0
-  path: ^1.8.1
 
 dev_dependencies:
   flutter_test:

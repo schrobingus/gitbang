@@ -8,11 +8,11 @@ import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
 // Import the created scripts.
-import 'package:feta/dialogs/clone_repository.dart';
-import 'package:feta/dialogs/new_repository.dart';
-import 'package:feta/dialogs/new_commit.dart';
-import 'package:feta/dialogs/revert_commit.dart';
-import 'package:feta/sidebar/main.dart';
+import 'package:gitbang/dialogs/clone_repository.dart';
+import 'package:gitbang/dialogs/new_repository.dart';
+import 'package:gitbang/dialogs/new_commit.dart';
+import 'package:gitbang/dialogs/revert_commit.dart';
+import 'package:gitbang/sidebar/main.dart';
 
 void main() => runApp(App());
 
@@ -568,6 +568,7 @@ class _MainState extends State<Main> {
                                             },
                                     )),
                               ),
+                              // FIXME: Refuses on certain directories.
                               GestureDetector(
                                 onTap: () async {
                                   if (await Directory(_currentData[i])

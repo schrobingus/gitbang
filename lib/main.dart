@@ -21,7 +21,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Feta',
+      title: 'GitBang',
       home: Main(),
     );
   }
@@ -37,6 +37,7 @@ class _MainState extends State<Main> {
   late List _currentDataStagedFilesOnly;
   List _currentDataUnstaged = [];
   List _currentDeleted = [];
+
   List _branches = [];
 
   String _sidebarContentState = "";
@@ -45,30 +46,33 @@ class _MainState extends State<Main> {
       var stagedResult, var unstagedResult) async {
     // TODO: Possibility of using 'git status --short' over running each command for optimization.
     // Refer to Renzix' comment.
+
     _currentData = [];
+    _currentDataAndDeleted = [];
+    _currentDataStaged = [];
+    _currentDataUnstaged = [];
+    _currentDeleted = [];
 
     List i = Directory("$_location$_current").listSync(
       recursive: false,
       followLinks: false,
     );
 
-    setState(() {
-      for (var j = 0; j < i.length; j++) {
-        _currentData.add(i[j].toString());
-        _currentData[j] = _currentData[j]
-            .replaceAll("File: '", "")
-            .replaceAll("Directory: '", "");
-        _currentData[j] =
-            _currentData[j].substring(0, _currentData[j].length - 1);
-      }
+    for (var j = 0; j < i.length; j++) {
+      _currentData.add(i[j].toString());
+      _currentData[j] = _currentData[j]
+          .replaceAll("File: '", "")
+          .replaceAll("Directory: '", "");
+      _currentData[j] =
+          _currentData[j].substring(0, _currentData[j].length - 1);
+    }
 
-      _currentData.remove("$_location$_current/.git");
-      if (_current != "") {
-        _currentData.insert(0, "$_location$_current/..");
-      }
+    _currentData.remove("$_location$_current/.git");
+    if (_current != "") {
+      _currentData.insert(0, "$_location$_current/..");
+    }
 
-      _currentData.sort();
-    });
+    _currentData.sort();
 
     await deletedUnstagedResult.stdout
         .transform(utf8.decoder)
@@ -93,81 +97,79 @@ class _MainState extends State<Main> {
               _currentDataUnstaged = const LineSplitter().convert(out),
             });
 
-    setState(() {
-      for (var i = _currentDeleted.length - 1; i >= 0; i--) {
-        var j = _currentDeleted[i].split("/");
-        j.remove(_currentDeleted[i].split("/").last);
+    for (var i = _currentDeleted.length - 1; i >= 0; i--) {
+      var j = _currentDeleted[i].split("/");
+      j.remove(_currentDeleted[i].split("/").last);
 
-        var k = _current.split("/");
-        k.remove("");
+      var k = _current.split("/");
+      k.remove("");
 
-        if (const ListEquality().equals(j, k)) {
-          var l = _currentDeleted[i];
-          _currentDeleted[i] = "$_location/$l";
-        } else {
-          _currentDeleted.removeAt(i);
-        }
+      if (const ListEquality().equals(j, k)) {
+        var l = _currentDeleted[i];
+        _currentDeleted[i] = "$_location/$l";
+      } else {
+        _currentDeleted.removeAt(i);
       }
-    });
+    }
 
     var filesOnly = List.from(_currentDataStaged);
 
+    for (var i = 0; i < _currentDataStaged.length; i++) {
+      var j = _currentDataStaged[i].split("/");
+      var k = "";
+
+      while (j.length != 1) {
+        j.remove(j.last);
+
+        for (var l = 0; l < j.length; l++) {
+          if (l == 0) {
+            k = j[l];
+          } else {
+            var m = j[l];
+            k = "$k/$m";
+          }
+        }
+
+        _currentDataStaged.add(k);
+      }
+    }
+
+    for (var i = 0; i < _currentDataUnstaged.length; i++) {
+      var j = _currentDataUnstaged[i].split("/");
+      var k = "";
+
+      while (j.length != 1) {
+        j.remove(j.last);
+
+        for (var l = 0; l < j.length; l++) {
+          if (l == 0) {
+            k = j[l];
+          } else {
+            var m = j[l];
+            k = "$k/$m";
+          }
+        }
+
+        _currentDataUnstaged.add(k);
+      }
+    }
+
+    for (var i = 0; i < _currentDataStaged.length; i++) {
+      var l = _currentDataStaged[i];
+      _currentDataStaged[i] = "$_location/$l";
+    }
+
+    for (var i = 0; i < _currentDataUnstaged.length; i++) {
+      var l = _currentDataUnstaged[i];
+      _currentDataUnstaged[i] = "$_location/$l";
+    }
+
+    _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
     setState(() {
-      for (var i = 0; i < _currentDataStaged.length; i++) {
-        var j = _currentDataStaged[i].split("/");
-        var k = "";
-
-        while (j.length != 1) {
-          j.remove(j.last);
-
-          for (var l = 0; l < j.length; l++) {
-            if (l == 0) {
-              k = j[l];
-            } else {
-              var m = j[l];
-              k = "$k/$m";
-            }
-          }
-
-          _currentDataStaged.add(k);
-        }
-      }
-
-      for (var i = 0; i < _currentDataUnstaged.length; i++) {
-        var j = _currentDataUnstaged[i].split("/");
-        var k = "";
-
-        while (j.length != 1) {
-          j.remove(j.last);
-
-          for (var l = 0; l < j.length; l++) {
-            if (l == 0) {
-              k = j[l];
-            } else {
-              var m = j[l];
-              k = "$k/$m";
-            }
-          }
-
-          _currentDataUnstaged.add(k);
-        }
-      }
-
-      for (var i = 0; i < _currentDataStaged.length; i++) {
-        var l = _currentDataStaged[i];
-        _currentDataStaged[i] = "$_location/$l";
-      }
-
-      for (var i = 0; i < _currentDataUnstaged.length; i++) {
-        var l = _currentDataUnstaged[i];
-        _currentDataUnstaged[i] = "$_location/$l";
-      }
-
-      _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
       _currentDataAndDeleted.sort();
-
-      _currentDataStagedFilesOnly = filesOnly;
     });
+
+    _currentDataStagedFilesOnly = filesOnly;
   }
 
   Future<void> _refresh() async {
@@ -196,13 +198,11 @@ class _MainState extends State<Main> {
     await Process.run("git", ["clone", repositoryToClone],
         workingDirectory: locationToCloneTo);
 
-    setState(() {
-      var i = repositoryToClone.split("/").last;
-      var j = locationToCloneTo;
+    var i = repositoryToClone.split("/").last;
+    var j = locationToCloneTo;
 
-      _location = "$j/$i";
-      _current = '';
-    });
+    _location = "$j/$i";
+    _current = '';
 
     _refresh();
   }
@@ -210,10 +210,8 @@ class _MainState extends State<Main> {
   void _newRepository(String result) async {
     await Process.run("git", ["init"], workingDirectory: result);
 
-    setState(() {
-      _location = result;
-      _current = '';
-    });
+    _location = result;
+    _current = '';
     _refresh();
   }
 
@@ -291,13 +289,13 @@ class _MainState extends State<Main> {
         leading: SizedBox(
           width: 24,
           height: 24,
-          child: PopupMenuButton(
+          child: PopupMenuButton<int>(
             padding: const EdgeInsets.all(0.0),
             icon: const Icon(
               Icons.add,
               size: 24.0,
             ),
-            tooltip: "Load Repository",
+            tooltip: "Load",
             itemBuilder: (context) => [
               PopupMenuItem<int>(
                 child: const Text("Clone Repository"),
@@ -321,10 +319,8 @@ class _MainState extends State<Main> {
                     bool resultIsGit = await Directory("$result/.git").exists();
                     if (resultExists) {
                       if (resultIsGit) {
-                        setState(() {
-                          _location = result;
-                          _current = '';
-                        });
+                        _location = result;
+                        _current = '';
 
                         await _refresh();
                       } else {
@@ -339,204 +335,344 @@ class _MainState extends State<Main> {
                   }
                 },
               ),
+              const PopupMenuDivider(),
+              PopupMenuItem<int>(
+                onTap: () {
+                  setState(() {
+                    _location = "null";
+                  });
+                },
+                enabled: _location != "null",
+                child: const Text("Close Repository"),
+              ),
             ],
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: PopupMenuButton<int>(
-              padding: const EdgeInsets.all(0.0),
-              icon: const Icon(
-                Icons.more_horiz,
-                size: 24.0,
-              ),
-              tooltip: "Options",
-              itemBuilder: (context) => [
-                PopupMenuItem<int>(
-                  child: const Text("New Commit"),
-                  onTap: () {
-                    String commitChanges = _currentDataStagedFilesOnly
-                        .join("\n")
-                        .replaceAll(_location, "");
-
-                    Future.delayed(
-                        const Duration(seconds: 0),
-                        () => showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return newCommitDialog(
-                                  context, _newCommit, commitChanges);
-                            }));
-                  },
+          Visibility(
+            visible: _location != "null",
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: PopupMenuButton<int>(
+                padding: const EdgeInsets.all(0.0),
+                icon: const Icon(
+                  Icons.more_horiz,
+                  size: 24.0,
                 ),
-                PopupMenuItem<int>(
-                  child: const Text("Revert Commit"),
-                  onTap: () {
-                    Future.delayed(
-                        const Duration(seconds: 0),
-                        () => showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return revertCommitDialog(context, _revertCommit);
-                            }));
-                  },
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem<int>(
-                  child: const Text("Pull Commits"),
-                  onTap: () async {
-                    late BuildContext loadingContext;
-                    Future.delayed(
-                        const Duration(seconds: 0),
-                        () => showDialog(
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (BuildContext context) {
-                              loadingContext = context;
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }));
+                tooltip: "Options",
+                itemBuilder: (context) => [
+                  PopupMenuItem<int>(
+                    enabled: _currentDataStaged.isNotEmpty,
+                    child: const Text("New Commit"),
+                    onTap: () {
+                      String commitChanges = _currentDataStagedFilesOnly
+                          .join("\n")
+                          .replaceAll(_location, "");
 
-                    await Process.run("git", ["pull"],
-                        workingDirectory: _location);
-                    await _refresh();
+                      Future.delayed(
+                          const Duration(seconds: 0),
+                          () => showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return newCommitDialog(
+                                    context, _newCommit, commitChanges);
+                              }));
+                    },
+                  ),
+                  PopupMenuItem<int>(
+                    child: const Text("Revert Commit"),
+                    onTap: () {
+                      Future.delayed(
+                          const Duration(seconds: 0),
+                          () => showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return revertCommitDialog(
+                                    context, _revertCommit);
+                              }));
+                    },
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<int>(
+                    child: const Text("Pull Commits"),
+                    onTap: () async {
+                      late BuildContext loadingContext;
+                      Future.delayed(
+                          const Duration(seconds: 0),
+                          () => showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (BuildContext context) {
+                                loadingContext = context;
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }));
 
-                    Navigator.of(loadingContext).pop();
-                  },
-                ),
-                PopupMenuItem<int>(
-                  child: const Text("Push Commits"),
-                  onTap: () async {
-                    late BuildContext loadingContext;
-                    Future.delayed(
-                        const Duration(seconds: 0),
-                        () => showDialog(
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (BuildContext context) {
-                              loadingContext = context;
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }));
+                      await Process.run("git", ["pull"],
+                          workingDirectory: _location);
+                      await _refresh();
 
-                    await Process.run("git", ["push"],
-                        workingDirectory: _location);
-                    // Unneeded to refresh since nothing is affected locally.
+                      Navigator.of(loadingContext).pop();
+                    },
+                  ),
+                  PopupMenuItem<int>(
+                    child: const Text("Push Commits"),
+                    onTap: () async {
+                      late BuildContext loadingContext;
+                      Future.delayed(
+                          const Duration(seconds: 0),
+                          () => showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (BuildContext context) {
+                                loadingContext = context;
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }));
 
-                    Navigator.of(loadingContext).pop();
-                  },
-                ),
-                PopupMenuItem<int>(
-                  child: const Text("Refresh"),
-                  onTap: () {
-                    _refresh();
-                  },
-                ),
-                /*const PopupMenuDivider(),
+                      await Process.run("git", ["push"],
+                          workingDirectory: _location);
+                      // Unneeded to refresh since nothing is affected locally.
+
+                      Navigator.of(loadingContext).pop();
+                    },
+                  ),
+                  PopupMenuItem<int>(
+                    child: const Text("Refresh"),
+                    onTap: () {
+                      _refresh();
+                    },
+                  ),
+                  /*const PopupMenuDivider(),
                 PopupMenuItem<int>(
                   child: const Text("Preferences"),
                   onTap: () {},
                 ),*/
-              ],
+                ],
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: IconButton(
-              padding: const EdgeInsets.all(0.0),
-              icon: const Icon(
-                Icons.history,
-                size: 24.0,
+          Visibility(
+            visible: _location != "null",
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: IconButton(
+                padding: const EdgeInsets.all(0.0),
+                icon: const Icon(
+                  Icons.history,
+                  size: 24.0,
+                ),
+                tooltip: "Commit History",
+                onPressed: () async {
+                  setState(() {
+                    _sidebarContentState = "history";
+                  });
+                  _key.currentState!.openEndDrawer();
+                },
               ),
-              tooltip: "Commit History",
-              onPressed: () async {
-                setState(() {
-                  _sidebarContentState = "history";
-                });
-                _key.currentState!.openEndDrawer();
-              },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: IconButton(
-              padding: const EdgeInsets.all(0.0),
-              icon: const Icon(
-                Icons.account_tree_outlined,
-                size: 24.0,
+          Visibility(
+            visible: _location != "null",
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: IconButton(
+                padding: const EdgeInsets.all(0.0),
+                icon: const Icon(
+                  Icons.account_tree_outlined,
+                  size: 24.0,
+                ),
+                tooltip: "Branches",
+                onPressed: () async {
+                  var branchResult = await Process.start(
+                      "git", ["branch", "-a"],
+                      workingDirectory: _location);
+
+                  branchResult.stdout
+                      .transform(utf8.decoder)
+                      .forEach((String out) => {
+                            setState(() {
+                              _branches = const LineSplitter().convert(out);
+                            }),
+                          });
+
+                  setState(() {
+                    _sidebarContentState = "branches";
+                  });
+                  _key.currentState!.openEndDrawer();
+                  // DONE: Show the branch list on click.
+                },
               ),
-              tooltip: "Branches",
-              onPressed: () async {
-                var branchResult = await Process.start("git", ["branch", "-a"],
-                    workingDirectory: _location);
-
-                branchResult.stdout
-                    .transform(utf8.decoder)
-                    .forEach((String out) => {
-                          setState(() {
-                            _branches = const LineSplitter().convert(out);
-                          }),
-                        });
-
-                setState(() {
-                  _sidebarContentState = "branches";
-                });
-                _key.currentState!.openEndDrawer();
-                // DONE: Show the branch list on click.
-              },
             ),
           ),
         ],
       ),
+      backgroundColor: Colors.grey,
       body: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
-          child: Column(children: [
-            if (_location != 'null') ...[
-              for (var i = 0; i < _currentDataAndDeleted.length; i++) ...[
-                Container(
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(width: 1.5, color: Colors.black),
-                      left: BorderSide(width: 1.5, color: Colors.black),
-                      right: BorderSide(width: 1.5, color: Colors.black),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0),
+                boxShadow: [
+                  if (_location != "null")
+                    BoxShadow(
+                      blurRadius: 5,
+                      color: Colors.black.withOpacity(.4),
                     ),
-                  ),
-                  padding: const EdgeInsets.only(
-                      left: 10, right: 10, top: 10, bottom: 10),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12.0),
+                child: Column(children: [
+                  if (_location != 'null') ...[
+                    if (_currentDataAndDeleted.isNotEmpty) ...[
+                      for (var i = 0;
+                          i < _currentDataAndDeleted.length;
+                          i++) ...[
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                          ),
+                          padding: const EdgeInsets.only(
+                              left: 10, right: 10, top: 10, bottom: 10),
                           child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: IconButton(
-                                      padding: const EdgeInsets.all(0.0),
-                                      icon: Icon(stagingIcon(i),
-                                          color: stagingIconColor(i),
-                                          size: 16.0),
-                                      onPressed: !_currentDataStaged.contains(
-                                                  _currentDataAndDeleted[i]) &&
-                                              !_currentDataUnstaged.contains(
-                                                  _currentDataAndDeleted[i])
-                                          ? null
-                                          : () async {
-                                              if (_currentDataUnstaged.contains(
-                                                      _currentDataAndDeleted[
-                                                          i]) ||
-                                                  (_currentDataStaged.contains(
-                                                          _currentDataAndDeleted[
-                                                              i]) &&
-                                                      _currentDataUnstaged.contains(
-                                                          _currentDataAndDeleted[
-                                                              i]))) {
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 8.0),
+                                        child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: IconButton(
+                                              padding:
+                                                  const EdgeInsets.all(0.0),
+                                              icon: Icon(stagingIcon(i),
+                                                  color: stagingIconColor(i),
+                                                  size: 16.0),
+                                              onPressed: !_currentDataStaged
+                                                          .contains(
+                                                              _currentDataAndDeleted[
+                                                                  i]) &&
+                                                      !_currentDataUnstaged
+                                                          .contains(
+                                                              _currentDataAndDeleted[
+                                                                  i])
+                                                  ? null
+                                                  : () async {
+                                                      if (_currentDataUnstaged
+                                                              .contains(
+                                                                  _currentDataAndDeleted[
+                                                                      i]) ||
+                                                          (_currentDataStaged
+                                                                  .contains(
+                                                                      _currentDataAndDeleted[
+                                                                          i]) &&
+                                                              _currentDataUnstaged
+                                                                  .contains(
+                                                                      _currentDataAndDeleted[
+                                                                          i]))) {
+                                                        await Process.run(
+                                                            "git",
+                                                            [
+                                                              "add",
+                                                              _currentDataAndDeleted[
+                                                                      i]
+                                                                  .replaceAll(
+                                                                      "$_location/",
+                                                                      "")
+                                                            ],
+                                                            workingDirectory:
+                                                                _location);
+                                                      } else if (_currentDataStaged
+                                                          .contains(
+                                                              _currentDataAndDeleted[
+                                                                  i])) {
+                                                        await Process.run(
+                                                            "git",
+                                                            [
+                                                              "reset",
+                                                              "--",
+                                                              _currentDataAndDeleted[
+                                                                      i]
+                                                                  .replaceAll(
+                                                                      "$_location/",
+                                                                      "")
+                                                            ],
+                                                            workingDirectory:
+                                                                _location);
+                                                      }
+
+                                                      _refresh();
+                                                    },
+                                            )),
+                                      ),
+                                      // FIXME: Refuses on certain directories.
+                                      GestureDetector(
+                                        onTap: () async {
+                                          if (await Directory(_currentData[i])
+                                              .exists()) {
+                                            Directory(_currentData[i])
+                                                .listSync();
+
+                                            _current = _currentData[i]
+                                                .replaceAll(_location, "");
+
+                                            if (_current.split("/").last ==
+                                                "..") {
+                                              _current = _current.substring(
+                                                  0, _current.length - 3);
+                                              _current = _current.replaceAll(
+                                                  _current.split("/").last, "");
+                                              _current = _current.substring(
+                                                  0, _current.length - 1);
+                                            }
+
+                                            _refresh();
+                                          }
+                                        },
+                                        child: Text(
+                                          _currentDataAndDeleted[i]
+                                              .split("/")
+                                              .last,
+                                          style: TextStyle(
+                                            color: deletedColor(i),
+                                            //color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 8.0),
+                                        child: Text(typeName(i)),
+                                      ),
+                                      SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: PopupMenuButton<int>(
+                                          padding: const EdgeInsets.all(0.0),
+                                          icon: const Icon(
+                                            Icons.more_vert,
+                                            size: 16.0,
+                                          ),
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem<int>(
+                                              child: const Text("Stage"),
+                                              onTap: () async {
                                                 await Process.run(
                                                     "git",
                                                     [
@@ -547,10 +683,12 @@ class _MainState extends State<Main> {
                                                     ],
                                                     workingDirectory:
                                                         _location);
-                                              } else if (_currentDataStaged
-                                                  .contains(
-                                                      _currentDataAndDeleted[
-                                                          i])) {
+                                                _refresh();
+                                              },
+                                            ),
+                                            PopupMenuItem<int>(
+                                              child: const Text("Unstage"),
+                                              onTap: () async {
                                                 await Process.run(
                                                     "git",
                                                     [
@@ -562,125 +700,72 @@ class _MainState extends State<Main> {
                                                     ],
                                                     workingDirectory:
                                                         _location);
-                                              }
-
-                                              _refresh();
-                                            },
-                                    )),
-                              ),
-                              // FIXME: Refuses on certain directories.
-                              GestureDetector(
-                                onTap: () async {
-                                  if (await Directory(_currentData[i])
-                                      .exists()) {
-                                    Directory(_currentData[i]).listSync();
-
-                                    setState(() {
-                                      _current = _currentData[i]
-                                          .replaceAll(_location, "");
-
-                                      if (_current.split("/").last == "..") {
-                                        _current = _current.substring(
-                                            0, _current.length - 3);
-                                        _current = _current.replaceAll(
-                                            _current.split("/").last, "");
-                                        _current = _current.substring(
-                                            0, _current.length - 1);
-                                      }
-                                    });
-
-                                    _refresh();
-                                  }
-                                },
-                                child: Text(
-                                  _currentDataAndDeleted[i].split("/").last,
-                                  style: TextStyle(
-                                    color: deletedColor(i),
-                                    //color: Colors.black,
+                                                _refresh();
+                                              },
+                                            ),
+                                            const PopupMenuDivider(),
+                                            PopupMenuItem<int>(
+                                              child: const Text("Restore"),
+                                              onTap: () async {
+                                                await Process.run(
+                                                    "git",
+                                                    [
+                                                      "restore",
+                                                      _currentDataAndDeleted[i]
+                                                          .replaceAll(
+                                                              "$_location/", "")
+                                                    ],
+                                                    workingDirectory:
+                                                        _location);
+                                                _refresh();
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ]),
                         ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Text(typeName(i)),
-                              ),
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: PopupMenuButton<int>(
-                                  padding: const EdgeInsets.all(0.0),
-                                  icon: const Icon(
-                                    Icons.more_vert,
-                                    size: 16.0,
-                                  ),
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem<int>(
-                                      child: const Text("Stage"),
-                                      onTap: () async {
-                                        await Process.run(
-                                            "git",
-                                            [
-                                              "add",
-                                              _currentDataAndDeleted[i]
-                                                  .replaceAll("$_location/", "")
-                                            ],
-                                            workingDirectory: _location);
-                                        _refresh();
-                                      },
-                                    ),
-                                    PopupMenuItem<int>(
-                                      child: const Text("Unstage"),
-                                      onTap: () async {
-                                        await Process.run(
-                                            "git",
-                                            [
-                                              "reset",
-                                              "--",
-                                              _currentDataAndDeleted[i]
-                                                  .replaceAll("$_location/", "")
-                                            ],
-                                            workingDirectory: _location);
-                                        _refresh();
-                                      },
-                                    ),
-                                    const PopupMenuDivider(),
-                                    PopupMenuItem<int>(
-                                      child: const Text("Restore"),
-                                      onTap: () async {
-                                        await Process.run(
-                                            "git",
-                                            [
-                                              "restore",
-                                              _currentDataAndDeleted[i]
-                                                  .replaceAll("$_location/", "")
-                                            ],
-                                            workingDirectory: _location);
-                                        _refresh();
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        if (i != _currentDataAndDeleted.length - 1)
+                          Container(
+                            // (Bottom border for decorations sake...)
+                            height: 1.25,
+                            decoration: const BoxDecoration(color: Colors.grey),
                           ),
+                      ],
+                    ] else ...[
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Flexible(
+                          child: Text(
+                              "The repository is empty, time to start your journey!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey)),
                         ),
-                      ]),
-                ),
-              ],
-              Container(
-                // (Bottom border for decorations sake...)
-                height: 1.5,
-                decoration: const BoxDecoration(color: Colors.black),
+                      ),
+                    ],
+                  ] else ...[
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text("LOGO HERE",
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                    const SizedBox(
+                      width: 300,
+                      child: Flexible(
+                        child: Text(
+                            "Welcome! Load or create a Git repository by clicking the + button.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ]),
               ),
-            ]
-          ]),
+            ),
+          ),
         ),
       ),
       endDrawer: Sidebar(_sidebarContentState, _branches, _location),

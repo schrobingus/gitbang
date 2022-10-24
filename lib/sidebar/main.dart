@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:gitbang/config.dart';
 
 class _SidebarState extends State<Sidebar> {
   List<String> _branchLocalList = [];
@@ -21,9 +22,13 @@ class _SidebarState extends State<Sidebar> {
           .split(" -> ")
           .last
           .startsWith("remotes/")) {
-        _branchLocalList.add(widget.sidebarBranches[i]);
+        setState(() {
+          _branchLocalList.add(widget.sidebarBranches[i]);
+        });
       } else {
-        _branchRemoteList.add(widget.sidebarBranches[i]);
+        setState(() {
+          _branchRemoteList.add(widget.sidebarBranches[i]);
+        });
       }
     }
   }
@@ -94,33 +99,73 @@ class _SidebarState extends State<Sidebar> {
     Color selectedColor(String i) {
       if (i[0] == '*') {
         if (i.contains("detached")) {
-          return Colors.red;
+          return colorSidebarItemDetach;
         } else {
-          return Colors.blue;
+          return colorSidebarItemSel;
         }
       } else {
-        return Colors.black;
+        return colorSidebarItemFg;
       }
     }
 
     return Drawer(
-      backgroundColor: Colors.grey,
+      backgroundColor: colorSidebarBg,
       child: SingleChildScrollView(
         child: Column(children: [
           if (widget.sidebarContent == "branches") ...[
-            const Padding(
-              padding: EdgeInsets.only(
-                  left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text("Local"),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children:[
+                    const Text("Local", style: TextStyle(color: colorSidebarFg)),
+                    GestureDetector(
+                      child: const Text("+ Add New",
+                          style: TextStyle(color: colorSidebarFg)),
+                      onTap: () {
+                        TextEditingController branchName = TextEditingController();
+                        Future.delayed(
+                            const Duration(seconds: 0),
+                                () => showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('New Branch'),
+                                    content: TextField(
+                                      controller: branchName,
+                                      decoration: const InputDecoration(
+                                        hintText: "Branch Name (ex: 'master')",
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text("Cancel")),
+                                      TextButton(
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+
+                                            Process.run("git",
+                                                ["checkout", "-b", branchName.text],
+                                                workingDirectory:
+                                                widget.targetLocation);
+                                          },
+                                          child: const Text("Add")),
+                                    ],
+                                  );
+                                }));
+                      },
+                    ),
+                  ]),
             ),
             Padding(
                 padding: const EdgeInsets.all(8),
                 child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colorSidebarItemBg,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
@@ -142,7 +187,7 @@ class _SidebarState extends State<Sidebar> {
                                 .startsWith("remotes/")) ...[
                               Container(
                                 decoration: const BoxDecoration(
-                                  color: Colors.white,
+                                  color: colorSidebarItemBg,
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.only(
@@ -221,68 +266,21 @@ class _SidebarState extends State<Sidebar> {
                                   ),
                                 ),
                               ),
-                              if (widget.sidebarBranches[i] !=
-                                  _branchLocalList.last) ...[
-                                Container(
-                                  height: 1.25,
-                                  decoration:
-                                      const BoxDecoration(color: Colors.grey),
-                                ),
-                              ],
                             ],
                           ],
                         ])))),
-            GestureDetector(
-              child: const Text("+ Add New"),
-              onTap: () {
-                TextEditingController branchName = TextEditingController();
-                Future.delayed(
-                    const Duration(seconds: 0),
-                    () => showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('New Branch'),
-                            content: TextField(
-                              controller: branchName,
-                              decoration: const InputDecoration(
-                                hintText: "Branch Name (ex: 'master')",
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text("Cancel")),
-                              TextButton(
-                                  onPressed: () async {
-                                    Navigator.of(context).pop();
-
-                                    Process.run("git",
-                                        ["checkout", "-b", branchName.text],
-                                        workingDirectory:
-                                            widget.targetLocation);
-                                  },
-                                  child: const Text("Add")),
-                            ],
-                          );
-                        }));
-              },
-            ),
             const Padding(
-              padding: EdgeInsets.only(
-                  left: 10.0, right: 10.0, top: 20.0, bottom: 15.0),
+              padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0),
               child: Align(
                 alignment: Alignment.topLeft,
-                child: Text("Remote"),
+                child: Text("Remote", style: TextStyle(color: colorSidebarFg)),
               ),
             ),
             Padding(
                 padding: const EdgeInsets.all(8),
                 child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colorSidebarItemBg,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
@@ -345,14 +343,15 @@ class _SidebarState extends State<Sidebar> {
                                   ),
                                 ),
                               ),
-                              if (widget.sidebarBranches[i] !=
+                              /*if (widget.sidebarBranches[i] !=
                                   _branchRemoteList.last) ...[
                                 Container(
                                   height: 1.25,
                                   decoration:
                                       const BoxDecoration(color: Colors.grey),
                                 ),
-                              ],
+                              ],*/
+                              // FIXME: For some reason, the function doesn't appear to be working.
                             ],
                           ]
                         ])))),
@@ -365,7 +364,7 @@ class _SidebarState extends State<Sidebar> {
                       padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorSidebarItemBg,
                           borderRadius: BorderRadius.circular(8.0),
                           boxShadow: [
                             BoxShadow(
@@ -404,7 +403,7 @@ class _SidebarState extends State<Sidebar> {
                       padding: const EdgeInsets.only(top: 12.0),
                       child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: colorSidebarItemBg,
                             boxShadow: [
                               BoxShadow(
                                 blurRadius: 5,

@@ -8,6 +8,7 @@ import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
 // Import the created scripts.
+import 'package:gitbang/config.dart';
 import 'package:gitbang/dialogs/clone_repository.dart';
 import 'package:gitbang/dialogs/new_repository.dart';
 import 'package:gitbang/dialogs/new_commit.dart';
@@ -238,9 +239,9 @@ class _MainState extends State<Main> {
   Widget build(BuildContext context) {
     Color deletedColor(var item) {
       if (_currentDeleted.contains(_currentDataAndDeleted[item])) {
-        return Colors.grey;
+        return colorMainItemDeleted;
       } else {
-        return Colors.black;
+        return colorMainItemStatic;
       }
     }
 
@@ -261,13 +262,13 @@ class _MainState extends State<Main> {
     Color stagingIconColor(int item) {
       if (_currentDataStaged.contains(_currentDataAndDeleted[item]) &&
           _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
-        return Colors.deepPurple;
+        return colorMainItemPartial;
       } else if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
-        return Colors.green;
+        return colorMainItemStaged;
       } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
-        return Colors.red;
+        return colorMainItemUnstaged;
       } else {
-        return Colors.black;
+        return colorMainItemStatic;
       }
     }
 
@@ -285,6 +286,8 @@ class _MainState extends State<Main> {
     return Scaffold(
       key: _key,
       appBar: AppBar(
+        backgroundColor: colorBarBg,
+        foregroundColor: colorBarFg,
         title: Text(_location.split("/").last),
         leading: SizedBox(
           width: 24,
@@ -507,7 +510,7 @@ class _MainState extends State<Main> {
           ),
         ],
       ),
-      backgroundColor: Colors.grey,
+      backgroundColor: colorMainBg,
       body: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
@@ -534,7 +537,7 @@ class _MainState extends State<Main> {
                           i++) ...[
                         Container(
                           decoration: const BoxDecoration(
-                            color: Colors.white,
+                            color: colorMainSelectionBg,
                           ),
                           padding: const EdgeInsets.only(
                               left: 10, right: 10, top: 10, bottom: 10),
@@ -658,69 +661,82 @@ class _MainState extends State<Main> {
                                       Padding(
                                         padding:
                                             const EdgeInsets.only(right: 8.0),
-                                        child: Text(typeName(i)),
+                                        child: Text(typeName(i),
+                                            style: const TextStyle(
+                                                color: colorMainItemStatic)),
                                       ),
                                       SizedBox(
                                         width: 16,
                                         height: 16,
-                                        child: PopupMenuButton<int>(
-                                          padding: const EdgeInsets.all(0.0),
-                                          icon: const Icon(
-                                            Icons.more_vert,
-                                            size: 16.0,
+                                        child: TooltipVisibility(
+                                          visible: false,
+                                          child: PopupMenuButton<int>(
+                                            padding: const EdgeInsets.all(0.0),
+                                            icon: const Icon(
+                                              Icons.more_vert,
+                                              size: 16.0,
+                                              color: colorMainItemStatic,
+                                            ),
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem<int>(
+                                                child: const Text("Stage"),
+                                                onTap: () async {
+                                                  await Process.run(
+                                                      "git",
+                                                      [
+                                                        "add",
+                                                        _currentDataAndDeleted[
+                                                                i]
+                                                            .replaceAll(
+                                                                "$_location/",
+                                                                "")
+                                                      ],
+                                                      workingDirectory:
+                                                          _location);
+                                                  _refresh();
+                                                },
+                                              ),
+                                              PopupMenuItem<int>(
+                                                child: const Text("Unstage"),
+                                                onTap: () async {
+                                                  await Process.run(
+                                                      "git",
+                                                      [
+                                                        "reset",
+                                                        "--",
+                                                        _currentDataAndDeleted[
+                                                                i]
+                                                            .replaceAll(
+                                                                "$_location/",
+                                                                "")
+                                                      ],
+                                                      workingDirectory:
+                                                          _location);
+                                                  _refresh();
+                                                },
+                                              ),
+                                              const PopupMenuDivider(),
+                                              PopupMenuItem<int>(
+                                                child: const Text("Restore"),
+                                                onTap: () async {
+                                                  await Process.run(
+                                                      "git",
+                                                      [
+                                                        "restore",
+                                                        _currentDataAndDeleted[
+                                                                i]
+                                                            .replaceAll(
+                                                                "$_location/",
+                                                                "")
+                                                      ],
+                                                      workingDirectory:
+                                                          _location);
+                                                  _refresh();
+                                                },
+                                              ),
+                                            ],
+                                            tooltip: null,
                                           ),
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem<int>(
-                                              child: const Text("Stage"),
-                                              onTap: () async {
-                                                await Process.run(
-                                                    "git",
-                                                    [
-                                                      "add",
-                                                      _currentDataAndDeleted[i]
-                                                          .replaceAll(
-                                                              "$_location/", "")
-                                                    ],
-                                                    workingDirectory:
-                                                        _location);
-                                                _refresh();
-                                              },
-                                            ),
-                                            PopupMenuItem<int>(
-                                              child: const Text("Unstage"),
-                                              onTap: () async {
-                                                await Process.run(
-                                                    "git",
-                                                    [
-                                                      "reset",
-                                                      "--",
-                                                      _currentDataAndDeleted[i]
-                                                          .replaceAll(
-                                                              "$_location/", "")
-                                                    ],
-                                                    workingDirectory:
-                                                        _location);
-                                                _refresh();
-                                              },
-                                            ),
-                                            const PopupMenuDivider(),
-                                            PopupMenuItem<int>(
-                                              child: const Text("Restore"),
-                                              onTap: () async {
-                                                await Process.run(
-                                                    "git",
-                                                    [
-                                                      "restore",
-                                                      _currentDataAndDeleted[i]
-                                                          .replaceAll(
-                                                              "$_location/", "")
-                                                    ],
-                                                    workingDirectory:
-                                                        _location);
-                                                _refresh();
-                                              },
-                                            ),
-                                          ],
                                         ),
                                       ),
                                     ],
@@ -732,7 +748,8 @@ class _MainState extends State<Main> {
                           Container(
                             // (Bottom border for decorations sake...)
                             height: 1.25,
-                            decoration: const BoxDecoration(color: Colors.grey),
+                            decoration:
+                                const BoxDecoration(color: colorMainSeparator),
                           ),
                       ],
                     ] else ...[
@@ -742,7 +759,7 @@ class _MainState extends State<Main> {
                           child: Text(
                               "The repository is empty, time to start your journey!",
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey)),
+                              style: TextStyle(color: colorMainSelectionFg)),
                         ),
                       ),
                     ],
@@ -750,7 +767,7 @@ class _MainState extends State<Main> {
                     const Padding(
                       padding: EdgeInsets.all(16),
                       child: Text("LOGO HERE",
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: colorMainSelectionFg)),
                     ),
                     const SizedBox(
                       width: 300,
@@ -758,7 +775,7 @@ class _MainState extends State<Main> {
                         child: Text(
                             "Welcome! Load or create a Git repository by clicking the + button.",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: colorMainSelectionFg)),
                       ),
                     ),
                   ],

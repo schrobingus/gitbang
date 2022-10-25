@@ -4,34 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:gitbang/config.dart';
 
 class _SidebarState extends State<Sidebar> {
-  List<String> _branchLocalList = [];
-  List<String> _branchRemoteList = [];
-
   var _historyPageNumber = 0;
   var _historyPageList = [];
   double _historyEntryAmount = 0;
   var _historyPageAmount = 0;
   bool _showHistory = false;
-
-  void _refreshBranches() {
-    _branchLocalList = [];
-    _branchRemoteList = [];
-    for (var i = 0; i < widget.sidebarBranches.length; i++) {
-      if (!widget.sidebarBranches[i]
-          .substring(2, widget.sidebarBranches[i].length)
-          .split(" -> ")
-          .last
-          .startsWith("remotes/")) {
-        setState(() {
-          _branchLocalList.add(widget.sidebarBranches[i]);
-        });
-      } else {
-        setState(() {
-          _branchRemoteList.add(widget.sidebarBranches[i]);
-        });
-      }
-    }
-  }
 
   Future<void> _refreshPage() async {
     setState(() {
@@ -87,9 +64,7 @@ class _SidebarState extends State<Sidebar> {
   @override
   void initState() {
     super.initState();
-    if (widget.sidebarContent == "branches") {
-      _refreshBranches();
-    } else if (widget.sidebarContent == "history") {
+    if (widget.sidebarContent == "history") {
       _refreshPage();
     }
   }
@@ -118,16 +93,18 @@ class _SidebarState extends State<Sidebar> {
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children:[
-                    const Text("Local", style: TextStyle(color: colorSidebarFg)),
+                  children: [
+                    const Text("Local",
+                        style: TextStyle(color: colorSidebarFg)),
                     GestureDetector(
                       child: const Text("+ Add New",
                           style: TextStyle(color: colorSidebarFg)),
                       onTap: () {
-                        TextEditingController branchName = TextEditingController();
+                        TextEditingController branchName =
+                            TextEditingController();
                         Future.delayed(
                             const Duration(seconds: 0),
-                                () => showDialog(
+                            () => showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
                                   return AlertDialog(
@@ -148,10 +125,15 @@ class _SidebarState extends State<Sidebar> {
                                           onPressed: () async {
                                             Navigator.of(context).pop();
 
-                                            Process.run("git",
-                                                ["checkout", "-b", branchName.text],
+                                            Process.run(
+                                                "git",
+                                                [
+                                                  "checkout",
+                                                  "-b",
+                                                  branchName.text
+                                                ],
                                                 workingDirectory:
-                                                widget.targetLocation);
+                                                    widget.targetLocation);
                                           },
                                           child: const Text("Add")),
                                     ],
@@ -266,6 +248,21 @@ class _SidebarState extends State<Sidebar> {
                                   ),
                                 ),
                               ),
+                              if (!widget.sidebarBranches[i]
+                                      .substring(
+                                          2, widget.sidebarBranches[i].length)
+                                      .split(" -> ")
+                                      .last
+                                      .startsWith("remotes/") &&
+                                  widget.sidebarBranches[i] ==
+                                      widget.sidebarBranches.lastWhere(
+                                          (j) => !j.contains("remotes/"))) ...[
+                                Container(
+                                  height: 1.25,
+                                  decoration: const BoxDecoration(
+                                      color: colorSidebarSeparator),
+                                ),
+                              ],
                             ],
                           ],
                         ])))),
@@ -343,14 +340,21 @@ class _SidebarState extends State<Sidebar> {
                                   ),
                                 ),
                               ),
-                              /*if (widget.sidebarBranches[i] !=
-                                  _branchRemoteList.last) ...[
+                              if (widget.sidebarBranches[i]
+                                  .substring(
+                                  2, widget.sidebarBranches[i].length)
+                                  .split(" -> ")
+                                  .last
+                                  .startsWith("remotes/") &&
+                                  widget.sidebarBranches[i] !=
+                                      widget.sidebarBranches.lastWhere(
+                                              (j) => j.contains("remotes/"))) ...[
                                 Container(
                                   height: 1.25,
-                                  decoration:
-                                      const BoxDecoration(color: Colors.grey),
+                                  decoration: const BoxDecoration(
+                                      color: colorSidebarSeparator),
                                 ),
-                              ],*/
+                              ],
                               // FIXME: For some reason, the function doesn't appear to be working.
                             ],
                           ]

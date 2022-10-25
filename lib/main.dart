@@ -13,7 +13,7 @@ import 'package:gitbang/dialogs/clone_repository.dart';
 import 'package:gitbang/dialogs/new_repository.dart';
 import 'package:gitbang/dialogs/new_commit.dart';
 import 'package:gitbang/dialogs/revert_commit.dart';
-import 'package:gitbang/sidebar/main.dart';
+import 'package:gitbang/sidebar.dart';
 
 void main() => runApp(App());
 

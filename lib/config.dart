@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// TODO: Switch to ThemeData class.
+
 // Colors grabbed from https://www.materialpalette.com
 const Color colorBarBg = Color(0xffeeeeee); // The background for the top bar.
 const Color colorBarFg = Color(0xff212121); // The foreground for the top bar.
@@ -16,6 +18,7 @@ const Color colorLoadingAnimation = Color(0xff212121); // The loading animation 
 const Color colorSidebarBg = Color(0xffe0e0e0); // The background for the sidebar.
 const Color colorSidebarFg = Color(0xff212121); // The foreground for the sidebar.
 const Color colorSidebarItemBg = Color(0xffeeeeee); // The background for sidebar items.
+const Color colorSidebarSeparator = Color(0xff757575); // The separator color for the selection.
 const Color colorSidebarItemFg = Color(0xff212121); // The foreground for sidebar items.
 const Color colorSidebarItemSel = Color(0xff1e88e5); // The selected color for sidebar items.
 const Color colorSidebarItemDetach = Color(0xffe53935); // The selected-but-detached color for sidebar items.

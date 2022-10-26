@@ -41,21 +41,30 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
           },
           child: const Text("Cancel")),
       TextButton(
-          onPressed: () async {
+          onPressed: () {
             Navigator.of(context).pop();
-
             late BuildContext loadingContext;
-            showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (BuildContext context) {
-                  loadingContext = context;
-                  return const Center(child: CircularProgressIndicator());
-                });
 
-            await cloneRepoFunction(
-                repositoryToClone.text, locationToCloneTo.text);
-            Navigator.of(loadingContext).pop();
+            void pop() {
+              Navigator.of(loadingContext).pop();
+            }
+
+            void work() async {
+              showDialog(
+                  barrierDismissible: false,
+                  context: context,
+                  builder: (BuildContext context) {
+                    loadingContext = context;
+                    return const Center(child: CircularProgressIndicator());
+                  });
+
+              await cloneRepoFunction(
+                  repositoryToClone.text, locationToCloneTo.text);
+
+              pop();
+            }
+
+            work();
           },
           child: const Text("Clone")),
     ],

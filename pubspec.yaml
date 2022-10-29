@@ -23,15 +23,25 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  collection: ^1.16.0
-  #color: ^3.0.0
   cupertino_icons: ^1.0.2
   file_picker: ^5.0.1
+  flutter_launcher_icons: "^0.10.0"
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+
+flutter_icons:
+  image_path: "png/icon.png"
+  windows:
+    generate: true
+    image_path: "png/icon.png"
+    icon_size: 256
+  linux:
+    generate: true
+    image_path: "png/icon.png"
+    icon_size: 256
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 // Import required external libraries.
-//import 'package:collection/collection.dart'; // List manipulation.
 import 'package:file_picker/file_picker.dart'; // File picker.
 
 // Import the created scripts.
 import 'package:gitbang/config.dart'; // Includes configuration options.
 import 'package:gitbang/dialogs/clone_repository.dart'; // Dialog for cloning repositories.
+import 'package:gitbang/dialogs/error.dart'; // Dialog for error messages.
 import 'package:gitbang/dialogs/new_repository.dart'; // Dialog for initializing a new repository.
 import 'package:gitbang/dialogs/new_commit.dart'; // Dialog for new commits.
 import 'package:gitbang/dialogs/revert_commit.dart'; // Dialog to revert commits.
@@ -37,7 +37,7 @@ class _MainState extends State<Main> {
 
   List _currentDataStaged = []; // Staged data.
   late List
-      _currentDataStagedFilesOnly; // Likewise but filtered to only include existing.
+  _currentDataStagedFilesOnly; // Likewise but filtered to only include existing.
   List _currentDataUnstaged = []; // Unstaged data.
   List _currentDeleted = []; // Deleted cached data.
 
@@ -86,22 +86,26 @@ class _MainState extends State<Main> {
     // Await the rest of the data to be received.
     await deletedUnstagedResult.stdout
         .transform(utf8.decoder)
-        .forEach((String out) => {
-              _currentDeleted = const LineSplitter().convert(out),
-            });
+        .forEach((String out) =>
+    {
+      _currentDeleted = const LineSplitter().convert(out),
+    });
     await deletedStagedResult.stdout
         .transform(utf8.decoder)
-        .forEach((String out) => {
-              _currentDeleted.addAll(const LineSplitter().convert(out)),
-            });
-    await stagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
-          _currentDataStaged = const LineSplitter().convert(out),
-        });
+        .forEach((String out) =>
+    {
+      _currentDeleted.addAll(const LineSplitter().convert(out)),
+    });
+    await stagedResult.stdout.transform(utf8.decoder).forEach((String out) =>
+    {
+      _currentDataStaged = const LineSplitter().convert(out),
+    });
     await unstagedResult.stdout
         .transform(utf8.decoder)
-        .forEach((String out) => {
-              _currentDataUnstaged = const LineSplitter().convert(out),
-            });
+        .forEach((String out) =>
+    {
+      _currentDataUnstaged = const LineSplitter().convert(out),
+    });
 
     // Extend deleted data to include repository root, and filter based on position.
     for (var i = _currentDeleted.length - 1; i >= 0; i--) {
@@ -122,7 +126,9 @@ class _MainState extends State<Main> {
 
       bool n = true;
       if (j != "") {
-        n = _currentDeleted[i] == "$j/${_currentDeleted[i].split("/").last}";
+        n = _currentDeleted[i] == "$j/${_currentDeleted[i]
+            .split("/")
+            .last}";
       }
 
       if (n && !m) {
@@ -147,6 +153,7 @@ class _MainState extends State<Main> {
 
         for (var l = 0; l < j.length; l++) {
           if (l == 0) {
+            // Dialog for error messages.
             k = j[l];
           } else {
             var m = j[l];
@@ -188,7 +195,8 @@ class _MainState extends State<Main> {
     }
 
     // Bring together the existing and deleted data.
-    _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
+    _currentDataAndDeleted = List.from(_currentData)
+      ..addAll(_currentDeleted);
     setState(() {
       // Also update the state.
       _currentDataAndDeleted.sort();
@@ -200,30 +208,44 @@ class _MainState extends State<Main> {
 
   // Quick refresh void that executes all data commands.
   Future<void> _refresh() async {
-    var deletedUnstagedResult = await Process.start(
-        "git", ["ls-files", "--deleted"],
-        workingDirectory: _location);
-    var deletedStagedResult = await Process.start(
-        "git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
-        workingDirectory: _location);
-    var stagedResult = await Process.start(
-        "git", ["diff", "--name-only", "--staged"],
-        workingDirectory: _location);
-    var unstagedResult = await Process.start(
-        "git", ["ls-files", "--exclude-standard", "--others", "-m"],
-        workingDirectory: _location);
+    try {
+      var deletedUnstagedResult = await Process.start(
+          "git", ["ls-files", "--deleted"],
+          workingDirectory: _location);
+      var deletedStagedResult = await Process.start(
+          "git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
+          workingDirectory: _location);
+      var stagedResult = await Process.start(
+          "git", ["diff", "--name-only", "--staged"],
+          workingDirectory: _location);
+      var unstagedResult = await Process.start(
+          "git", ["ls-files", "--exclude-standard", "--others", "-m"],
+          workingDirectory: _location);
 
-    _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult,
-        unstagedResult);
+      _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult,
+          unstagedResult);
+    } catch (e) {
+      Future.delayed(
+          const Duration(seconds: 0),
+              () =>
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return errorMessageDialog(
+                        context, "Failed to refresh repository contents.");
+                  }));
+    }
   }
 
   // Void to clone a repository. Hooks into dialog.
-  Future<void> _cloneRepository(
-      String repositoryToClone, String locationToCloneTo) async {
+  Future<void> _cloneRepository(String repositoryToClone,
+      String locationToCloneTo) async {
     await Process.run("git", ["clone", repositoryToClone],
         workingDirectory: locationToCloneTo);
 
-    var i = repositoryToClone.split("/").last;
+    var i = repositoryToClone
+        .split("/")
+        .last;
     var j = locationToCloneTo;
 
     _location = "$j/$i";
@@ -319,7 +341,9 @@ class _MainState extends State<Main> {
         // The top bar.
         backgroundColor: colorBarBg,
         foregroundColor: colorBarFg,
-        title: Text(_location.split("/").last),
+        title: Text(_location
+            .split("/")
+            .last),
         // Includes the name of the project.
         leading: SizedBox(
           width: 24,
@@ -333,18 +357,20 @@ class _MainState extends State<Main> {
               size: 24.0,
             ),
             tooltip: "Load",
-            itemBuilder: (context) => [
+            itemBuilder: (context) =>
+            [
               PopupMenuItem<int>(
                 child: const Text("Clone Repository"),
                 onTap: () async {
                   Future.delayed(
                       const Duration(seconds: 0),
-                      () => showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return cloneRepositoryDialog(
-                                context, _cloneRepository);
-                          }));
+                          () =>
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return cloneRepositoryDialog(
+                                    context, _cloneRepository);
+                              }));
                 },
               ),
               PopupMenuItem<int>(
@@ -400,7 +426,8 @@ class _MainState extends State<Main> {
                   size: 24.0,
                 ),
                 tooltip: "Options",
-                itemBuilder: (context) => [
+                itemBuilder: (context) =>
+                [
                   PopupMenuItem<int>(
                     enabled: _currentDataStaged.isNotEmpty,
                     child: const Text("New Commit"),
@@ -411,12 +438,13 @@ class _MainState extends State<Main> {
 
                       Future.delayed(
                           const Duration(seconds: 0),
-                          () => showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return newCommitDialog(
-                                    context, _newCommit, commitChanges);
-                              }));
+                              () =>
+                              showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return newCommitDialog(
+                                        context, _newCommit, commitChanges);
+                                  }));
                     },
                   ),
                   PopupMenuItem<int>(
@@ -424,12 +452,13 @@ class _MainState extends State<Main> {
                     onTap: () {
                       Future.delayed(
                           const Duration(seconds: 0),
-                          () => showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return revertCommitDialog(
-                                    context, _revertCommit);
-                              }));
+                              () =>
+                              showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return revertCommitDialog(
+                                        context, _revertCommit);
+                                  }));
                     },
                   ),
                   const PopupMenuDivider(),
@@ -445,17 +474,28 @@ class _MainState extends State<Main> {
                       void work() async {
                         Future.delayed(
                             const Duration(seconds: 0),
-                            () => showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (BuildContext context) {
-                                  loadingContext = context;
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                }));
+                                () =>
+                                showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      loadingContext = context;
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    }));
 
-                        await Process.run("git", ["pull"],
-                            workingDirectory: _location);
+                        try {
+                          await Process.run("git", ["pull"],
+                              workingDirectory: _location);
+                        } catch(e) {
+                          Future.delayed(
+                              const Duration(seconds: 0),
+                                  () => showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return errorMessageDialog(context, "Could not pull new commits from repository.");
+                                  }));
+                        }
                         await _refresh();
                         pop();
                       }
@@ -475,17 +515,29 @@ class _MainState extends State<Main> {
                       void work() async {
                         Future.delayed(
                             const Duration(seconds: 0),
-                            () => showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (BuildContext context) {
-                                  loadingContext = context;
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                }));
+                                () =>
+                                showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      loadingContext = context;
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    }));
 
-                        await Process.run("git", ["push"],
-                            workingDirectory: _location);
+                        try {
+                          await Process.run("git", ["push"],
+                              workingDirectory: _location);
+                        } catch(e) {
+                          Future.delayed(
+                              const Duration(seconds: 0),
+                                  () => showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return errorMessageDialog(context, "Could not push local commits to repository.");
+                                  }));
+                        }
+
                         await _refresh();
                         pop();
                       }
@@ -548,11 +600,12 @@ class _MainState extends State<Main> {
 
                   branchResult.stdout
                       .transform(utf8.decoder)
-                      .forEach((String out) => {
-                            setState(() {
-                              _branches = const LineSplitter().convert(out);
-                            }),
-                          });
+                      .forEach((String out) =>
+                  {
+                    setState(() {
+                      _branches = const LineSplitter().convert(out);
+                    }),
+                  });
 
                   setState(() {
                     _sidebarContentState = "branches";
@@ -573,7 +626,7 @@ class _MainState extends State<Main> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.0),
               boxShadow: [
-                if (_location != "null")
+                if (_location != "null" && _currentDataAndDeleted.isNotEmpty)
                   BoxShadow(
                     blurRadius: 5,
                     color: Colors.black.withOpacity(.4),
@@ -604,7 +657,7 @@ class _MainState extends State<Main> {
                                   children: [
                                     Padding(
                                       padding:
-                                          const EdgeInsets.only(right: 8.0),
+                                      const EdgeInsets.only(right: 8.0),
                                       // Below has the item icon for staging status.
                                       child: SizedBox(
                                           width: 16,
@@ -615,59 +668,79 @@ class _MainState extends State<Main> {
                                                 color: stagingIconColor(i),
                                                 size: 16.0),
                                             onPressed: !_currentDataStaged
-                                                        .contains(
-                                                            _currentDataAndDeleted[
-                                                                i]) &&
-                                                    !_currentDataUnstaged.contains(
-                                                        _currentDataAndDeleted[
-                                                            i])
+                                                .contains(
+                                                _currentDataAndDeleted[
+                                                i]) &&
+                                                !_currentDataUnstaged.contains(
+                                                    _currentDataAndDeleted[
+                                                    i])
                                                 ? null
                                                 : () async {
-                                                    if (_currentDataUnstaged
-                                                            .contains(
-                                                                _currentDataAndDeleted[
-                                                                    i]) ||
-                                                        (_currentDataStaged
-                                                                .contains(
-                                                                    _currentDataAndDeleted[
-                                                                        i]) &&
-                                                            _currentDataUnstaged
-                                                                .contains(
-                                                                    _currentDataAndDeleted[
-                                                                        i]))) {
-                                                      await Process.run(
-                                                          "git",
-                                                          [
-                                                            "add",
-                                                            _currentDataAndDeleted[
-                                                                    i]
-                                                                .replaceAll(
-                                                                    "$_location/",
-                                                                    "")
-                                                          ],
-                                                          workingDirectory:
-                                                              _location);
-                                                    } else if (_currentDataStaged
-                                                        .contains(
-                                                            _currentDataAndDeleted[
-                                                                i])) {
-                                                      await Process.run(
-                                                          "git",
-                                                          [
-                                                            "reset",
-                                                            "--",
-                                                            _currentDataAndDeleted[
-                                                                    i]
-                                                                .replaceAll(
-                                                                    "$_location/",
-                                                                    "")
-                                                          ],
-                                                          workingDirectory:
-                                                              _location);
-                                                    }
+                                              if (_currentDataUnstaged
+                                                  .contains(
+                                                  _currentDataAndDeleted[
+                                                  i]) ||
+                                                  (_currentDataStaged
+                                                      .contains(
+                                                      _currentDataAndDeleted[
+                                                      i]) &&
+                                                      _currentDataUnstaged
+                                                          .contains(
+                                                          _currentDataAndDeleted[
+                                                          i]))) {
+                                                try {
+                                                  await Process.run(
+                                                      "git",
+                                                      [
+                                                        "add",
+                                                        _currentDataAndDeleted[
+                                                        i]
+                                                            .replaceAll(
+                                                            "$_location/",
+                                                            "")
+                                                      ],
+                                                      workingDirectory:
+                                                      _location);
+                                                } catch(e) {
+                                                  Future.delayed(
+                                                      const Duration(seconds: 0),
+                                                          () => showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return errorMessageDialog(context, "Error staging file.");
+                                                          }));
+                                                }
+                                              } else if (_currentDataStaged
+                                                  .contains(
+                                                  _currentDataAndDeleted[
+                                                  i])) {
+                                                try {
+                                                  await Process.run(
+                                                      "git",
+                                                      [
+                                                        "reset",
+                                                        "--",
+                                                        _currentDataAndDeleted[
+                                                        i]
+                                                            .replaceAll(
+                                                            "$_location/",
+                                                            "")
+                                                      ],
+                                                      workingDirectory:
+                                                      _location);
+                                                } catch(e) {
+                                                  Future.delayed(
+                                                      const Duration(seconds: 0),
+                                                          () => showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return errorMessageDialog(context, "Error unstaging file.");
+                                                          }));
+                                                }
+                                              }
 
-                                                    _refresh();
-                                                  },
+                                              _refresh();
+                                            },
                                           )),
                                     ),
                                     // Below is the name of the item.
@@ -675,31 +748,47 @@ class _MainState extends State<Main> {
                                       child: GestureDetector(
                                         onTap: () async {
                                           if (await Directory(
-                                                  _currentDataAndDeleted[i])
+                                              _currentDataAndDeleted[i])
                                               .exists()) {
-                                            Directory(_currentDataAndDeleted[i])
-                                                .listSync();
+                                            try {
+                                              Directory(
+                                                  _currentDataAndDeleted[i])
+                                                  .listSync();
 
-                                            _current = _currentDataAndDeleted[i]
-                                                .replaceAll(_location, "");
+                                              _current =
+                                                  _currentDataAndDeleted[i]
+                                                      .replaceAll(
+                                                      _location, "");
 
-                                            if (_current.split("/").last ==
-                                                "..") {
-                                              _current = _current.substring(
-                                                  0, _current.length - 3);
-                                              _current = _current.replaceAll(
-                                                  _current.split("/").last, "");
-                                              _current = _current.substring(
-                                                  0, _current.length - 1);
+                                              if (_current
+                                                  .split("/")
+                                                  .last ==
+                                                  "..") {
+                                                _current = _current.substring(
+                                                    0, _current.length - 3);
+                                                _current = _current.replaceAll(
+                                                    _current
+                                                        .split("/")
+                                                        .last, "");
+                                                _current = _current.substring(
+                                                    0, _current.length - 1);
+                                              }
+                                            } catch(e) {
+                                              Future.delayed(
+                                                  const Duration(seconds: 0),
+                                                      () => showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext context) {
+                                                        return errorMessageDialog(context, "Could not jump to directory.");
+                                                      }));
                                             }
-
                                             _refresh();
                                           }
                                         },
                                         child: Text(
                                           _currentDataAndDeleted[i]
                                               .replaceAll(
-                                                  "$_location$_current", "")
+                                              "$_location$_current", "")
                                               .substring(1),
                                           maxLines: 1,
                                           overflow: TextOverflow.fade,
@@ -740,52 +829,84 @@ class _MainState extends State<Main> {
                                           size: 16.0,
                                           color: colorMainItemStatic,
                                         ),
-                                        itemBuilder: (context) => [
+                                        itemBuilder: (context) =>
+                                        [
                                           PopupMenuItem<int>(
                                             child: const Text("Stage"),
                                             onTap: () async {
-                                              await Process.run(
-                                                  "git",
-                                                  [
-                                                    "add",
-                                                    _currentDataAndDeleted[i]
-                                                        .replaceAll(
-                                                            "$_location/", "")
-                                                  ],
-                                                  workingDirectory: _location);
+                                              try {
+                                                await Process.run(
+                                                    "git",
+                                                    [
+                                                      "add",
+                                                      _currentDataAndDeleted[i]
+                                                          .replaceAll(
+                                                          "$_location/", "")
+                                                    ],
+                                                    workingDirectory: _location);
+                                              } catch(e) {
+                                                Future.delayed(
+                                                    const Duration(seconds: 0),
+                                                        () => showDialog(
+                                                        context: context,
+                                                        builder: (BuildContext context) {
+                                                          return errorMessageDialog(context, "Error staging file.");
+                                                        }));
+                                              }
                                               _refresh();
                                             },
                                           ),
                                           PopupMenuItem<int>(
                                             child: const Text("Unstage"),
                                             onTap: () async {
-                                              await Process.run(
-                                                  "git",
-                                                  [
-                                                    "reset",
-                                                    "--",
-                                                    _currentDataAndDeleted[i]
-                                                        .replaceAll(
-                                                            "$_location/", "")
-                                                  ],
-                                                  workingDirectory: _location);
-                                              _refresh();
+                                              try {
+                                                await Process.run(
+                                                    "git",
+                                                    [
+                                                      "reset",
+                                                      "--",
+                                                      _currentDataAndDeleted[i]
+                                                          .replaceAll(
+                                                          "$_location/", "")
+                                                    ],
+                                                    workingDirectory: _location);
+                                                _refresh();
+                                              } catch(e) {
+                                                Future.delayed(
+                                                    const Duration(seconds: 0),
+                                                        () => showDialog(
+                                                        context: context,
+                                                        builder: (BuildContext context) {
+                                                          return errorMessageDialog(context, "Error unstaging file.");
+                                                        }));
+                                              }
                                             },
                                           ),
                                           const PopupMenuDivider(),
                                           PopupMenuItem<int>(
                                             child: const Text("Restore"),
                                             onTap: () async {
-                                              await Process.run(
-                                                  "git",
-                                                  [
-                                                    "checkout",
-                                                    "HEAD",
-                                                    _currentDataAndDeleted[i]
-                                                        .replaceAll(
-                                                            "$_location/", "")
-                                                  ],
-                                                  workingDirectory: _location);
+                                              try {
+                                                await Process.run(
+                                                    "git",
+                                                    [
+                                                      "checkout",
+                                                      "HEAD",
+                                                      _currentDataAndDeleted[i]
+                                                          .replaceAll(
+                                                          "$_location/", "")
+                                                    ],
+                                                    workingDirectory: _location);
+                                              } catch(e) {
+                                                Future.delayed(
+                                                    const Duration(seconds: 0),
+                                                        () => showDialog(
+                                                        context: context,
+                                                        builder: (BuildContext context) {
+                                                          return errorMessageDialog(context, "Error restoring file.");
+                                                        }));
+                                              }
+
                                               _refresh();
                                             },
                                           ),
@@ -804,38 +925,40 @@ class _MainState extends State<Main> {
                           // (Bottom border for decorations sake...)
                           height: 1.25,
                           decoration:
-                              const BoxDecoration(color: colorMainSeparator),
+                          const BoxDecoration(color: colorMainSeparator),
                         ),
                     ],
-                  ] else ...[
+                  ] else
+                    ...[
+                      const Padding(
+                        // Text box in case the repository has no items.
+                        padding: EdgeInsets.all(16),
+                        child: Flexible(
+                          child: Text(
+                              "The repository is empty, time to start your journey!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: colorMainSelectionFg)),
+                        ),
+                      ),
+                    ],
+                ] else
+                  ...[
+                    // Start page in case a repository isn't loaded.
                     const Padding(
-                      // Text box in case the repository has no items.
                       padding: EdgeInsets.all(16),
+                      child: Text("LOGO HERE",
+                          style: TextStyle(color: colorMainSelectionFg)),
+                    ),
+                    const SizedBox(
+                      width: 300,
                       child: Flexible(
                         child: Text(
-                            "The repository is empty, time to start your journey!",
+                            "Welcome! Load or create a Git repository by clicking the + button.",
                             textAlign: TextAlign.center,
                             style: TextStyle(color: colorMainSelectionFg)),
                       ),
                     ),
                   ],
-                ] else ...[
-                  // Start page in case a repository isn't loaded.
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text("LOGO HERE",
-                        style: TextStyle(color: colorMainSelectionFg)),
-                  ),
-                  const SizedBox(
-                    width: 300,
-                    child: Flexible(
-                      child: Text(
-                          "Welcome! Load or create a Git repository by clicking the + button.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: colorMainSelectionFg)),
-                    ),
-                  ),
-                ],
               ]),
             ),
           ),

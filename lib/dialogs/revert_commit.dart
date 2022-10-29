@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // Flutter Material dependency.
+import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
 
 AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
   TextEditingController revertMessage = TextEditingController();
@@ -34,7 +35,21 @@ AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
       TextButton(
           onPressed: () async {
             Navigator.of(context).pop();
-            await revertCommitFunction(revertCommit.text, revertMessage.text);
+
+            try {
+              await revertCommitFunction(revertCommit.text, revertMessage.text);
+            } catch(e) {
+              Future.delayed(
+                  const Duration(seconds: 0),
+                      () => showDialog(
+                      context: context,
+                      builder:
+                          (BuildContext context) {
+                        return errorMessageDialog(
+                            context,
+                            "Unable to revert commit.");
+                      }));
+            }
           },
           child: const Text("Apply")),
     ],

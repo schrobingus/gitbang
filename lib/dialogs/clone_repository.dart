@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-
-import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart'; // Flutter Material dependency.
+import 'package:file_picker/file_picker.dart'; // File picker for clone location.
+import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
 
 AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
   TextEditingController repositoryToClone = TextEditingController();
@@ -58,8 +58,22 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
                     return const Center(child: CircularProgressIndicator());
                   });
 
-              await cloneRepoFunction(
-                  repositoryToClone.text, locationToCloneTo.text);
+              try {
+                await cloneRepoFunction(
+                    repositoryToClone.text, locationToCloneTo.text);
+              } catch(e) {
+                Future.delayed(
+                    const Duration(seconds: 0),
+                        () => showDialog(
+                        context: context,
+                        builder:
+                            (BuildContext context) {
+                          return errorMessageDialog(
+                              context,
+                              "Unable to clone repository.");
+                        }));
+                pop();
+              }
 
               pop();
             }

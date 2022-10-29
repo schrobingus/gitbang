@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // Flutter Material dependency.
+import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
 
 AlertDialog newCommitDialog(
     BuildContext context, var newCommitFunction, String commitChanges) {
@@ -58,7 +59,21 @@ AlertDialog newCommitDialog(
       TextButton(
           onPressed: () async {
             Navigator.of(context).pop();
-            newCommitFunction(commitMessage.text);
+
+            try {
+              newCommitFunction(commitMessage.text);
+            } catch(e) {
+              Future.delayed(
+                  const Duration(seconds: 0),
+                      () => showDialog(
+                      context: context,
+                      builder:
+                          (BuildContext context) {
+                        return errorMessageDialog(
+                            context,
+                            "Unable to create commit.");
+                      }));
+            }
           },
           child: const Text("Apply")),
     ],

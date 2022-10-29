@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gitbang/config.dart';
+import 'package:gitbang/dialogs/error.dart';
 
 class _SidebarState extends State<Sidebar> {
   var _historyPageNumber = 0;
@@ -125,15 +126,28 @@ class _SidebarState extends State<Sidebar> {
                                           onPressed: () async {
                                             Navigator.of(context).pop();
 
-                                            Process.run(
-                                                "git",
-                                                [
-                                                  "checkout",
-                                                  "-b",
-                                                  branchName.text
-                                                ],
-                                                workingDirectory:
-                                                    widget.targetLocation);
+                                            try {
+                                              Process.run(
+                                                  "git",
+                                                  [
+                                                    "checkout",
+                                                    "-b",
+                                                    branchName.text
+                                                  ],
+                                                  workingDirectory:
+                                                      widget.targetLocation);
+                                            } catch (e) {
+                                              Future.delayed(
+                                                  const Duration(seconds: 0),
+                                                  () => showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return errorMessageDialog(
+                                                            context,
+                                                            "Could not create branch.");
+                                                      }));
+                                            }
                                           },
                                           child: const Text("Add")),
                                     ],
@@ -182,21 +196,44 @@ class _SidebarState extends State<Sidebar> {
                                     child: GestureDetector(
                                       onTap: () {
                                         void checkoutBranch() async {
-                                          await Process.start(
-                                              "git",
-                                              [
-                                                "checkout",
-                                                widget.sidebarBranches[i]
-                                                    .substring(
-                                                        2,
-                                                        widget
-                                                            .sidebarBranches[i]
-                                                            .length)
-                                                    .split(" -> ")
-                                                    .last
-                                              ],
-                                              workingDirectory:
-                                                  widget.targetLocation);
+                                          try {
+                                            await Process.start(
+                                                "git",
+                                                [
+                                                  "checkout",
+                                                  widget.sidebarBranches[i]
+                                                      .substring(
+                                                          2,
+                                                          widget
+                                                              .sidebarBranches[
+                                                                  i]
+                                                              .length)
+                                                      .split(" -> ")
+                                                      .last
+                                                ],
+                                                workingDirectory:
+                                                    widget.targetLocation);
+                                          } catch (e) {
+                                            var branchName = widget
+                                                .sidebarBranches[i]
+                                                .substring(
+                                                    2,
+                                                    widget.sidebarBranches[i]
+                                                        .length)
+                                                .split(" -> ")
+                                                .last;
+
+                                            Future.delayed(
+                                                const Duration(seconds: 0),
+                                                () => showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (BuildContext context) {
+                                                      return errorMessageDialog(
+                                                          context,
+                                                          "Could not switch to branch ($branchName).");
+                                                    }));
+                                          }
                                         }
 
                                         if (!widget.sidebarBranches[i]
@@ -308,20 +345,43 @@ class _SidebarState extends State<Sidebar> {
                                   child: GestureDetector(
                                     onTap: () {
                                       void checkoutBranch() async {
-                                        await Process.start(
-                                            "git",
-                                            [
-                                              "checkout",
-                                              widget.sidebarBranches[i]
-                                                  .substring(
-                                                      2,
-                                                      widget.sidebarBranches[i]
-                                                          .length)
-                                                  .split(" -> ")
-                                                  .last
-                                            ],
-                                            workingDirectory:
-                                                widget.targetLocation);
+                                        try {
+                                          await Process.start(
+                                              "git",
+                                              [
+                                                "checkout",
+                                                widget.sidebarBranches[i]
+                                                    .substring(
+                                                        2,
+                                                        widget
+                                                            .sidebarBranches[i]
+                                                            .length)
+                                                    .split(" -> ")
+                                                    .last
+                                              ],
+                                              workingDirectory:
+                                                  widget.targetLocation);
+                                        } catch (e) {
+                                          var branchName = widget
+                                              .sidebarBranches[i]
+                                              .substring(
+                                                  2,
+                                                  widget.sidebarBranches[i]
+                                                      .length)
+                                              .split(" -> ")
+                                              .last;
+
+                                          Future.delayed(
+                                              const Duration(seconds: 0),
+                                              () => showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return errorMessageDialog(
+                                                        context,
+                                                        "Could not switch to branch ($branchName).");
+                                                  }));
+                                        }
                                       }
 
                                       checkoutBranch();
@@ -341,14 +401,14 @@ class _SidebarState extends State<Sidebar> {
                                 ),
                               ),
                               if (widget.sidebarBranches[i]
-                                  .substring(
-                                  2, widget.sidebarBranches[i].length)
-                                  .split(" -> ")
-                                  .last
-                                  .startsWith("remotes/") &&
+                                      .substring(
+                                          2, widget.sidebarBranches[i].length)
+                                      .split(" -> ")
+                                      .last
+                                      .startsWith("remotes/") &&
                                   widget.sidebarBranches[i] !=
                                       widget.sidebarBranches.lastWhere(
-                                              (j) => j.contains("remotes/"))) ...[
+                                          (j) => j.contains("remotes/"))) ...[
                                 Container(
                                   height: 1.25,
                                   decoration: const BoxDecoration(

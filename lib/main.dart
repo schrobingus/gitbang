@@ -8,12 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart'; // File picker.
 
 // Import the created scripts.
-import 'package:gitbang/config.dart';
-import 'package:gitbang/dialogs/clone_repository.dart';
-import 'package:gitbang/dialogs/new_repository.dart';
-import 'package:gitbang/dialogs/new_commit.dart';
-import 'package:gitbang/dialogs/revert_commit.dart';
-import 'package:gitbang/sidebar.dart';
+import 'package:gitbang/config.dart'; // Includes configuration options.
+import 'package:gitbang/dialogs/clone_repository.dart'; // Dialog for cloning repositories.
+import 'package:gitbang/dialogs/new_repository.dart'; // Dialog for initializing a new repository.
+import 'package:gitbang/dialogs/new_commit.dart'; // Dialog for new commits.
+import 'package:gitbang/dialogs/revert_commit.dart'; // Dialog to revert commits.
+import 'package:gitbang/sidebar.dart'; // The history and branch sidebar.
 
 void main() => runApp(App());
 
@@ -29,36 +29,43 @@ class App extends StatelessWidget {
 }
 
 class _MainState extends State<Main> {
-  String _location = 'null';
+  String _location = 'null'; // Root location of the opened repository.
 
-  late String _current = '';
-  late List _currentData;
-  late List _currentDataAndDeleted;
-  List _currentDataStaged = [];
-  late List _currentDataStagedFilesOnly;
-  List _currentDataUnstaged = [];
-  List _currentDeleted = [];
+  late String _current = ''; // Current location being viewed in the repository.
+  late List _currentData; // The data coming from the current location.
+  late List _currentDataAndDeleted; // Likewise including deleted cached data.
 
-  List _branches = [];
+  List _currentDataStaged = []; // Staged data.
+  late List
+      _currentDataStagedFilesOnly; // Likewise but filtered to only include existing.
+  List _currentDataUnstaged = []; // Unstaged data.
+  List _currentDeleted = []; // Deleted cached data.
 
-  String _sidebarContentState = "";
+  List _branches = []; // List of available branches.
 
+  String _sidebarContentState =
+      ""; // The state of the sidebar ("branches", or "history").
+
+  // The void designed to update and internally refresh all of the current data.
   void _currentUpdate(var deletedUnstagedResult, var deletedStagedResult,
       var stagedResult, var unstagedResult) async {
     // TODO: Possibility of using 'git status --short' over running each command for optimization.
     // Refer to Renzix' comment.
 
+    // Reset current data.
     _currentData = [];
     _currentDataAndDeleted = [];
     _currentDataStaged = [];
     _currentDataUnstaged = [];
     _currentDeleted = [];
 
+    // List data from directory.
     List i = Directory("$_location$_current").listSync(
       recursive: false,
       followLinks: false,
     );
 
+    // Convert to parsable string.
     for (var j = 0; j < i.length; j++) {
       _currentData.add(i[j].toString());
       _currentData[j] = _currentData[j]
@@ -68,43 +75,69 @@ class _MainState extends State<Main> {
           _currentData[j].substring(0, _currentData[j].length - 1);
     }
 
+    // Filter out internal Git repository configuration.
     _currentData.remove("$_location$_current/.git");
     if (_current != "") {
       _currentData.insert(0, "$_location$_current/..");
     }
 
-    _currentData.sort();
+    _currentData.sort(); // Sort data.
 
+    // Await the rest of the data to be received.
     await deletedUnstagedResult.stdout
         .transform(utf8.decoder)
         .forEach((String out) => {
               _currentDeleted = const LineSplitter().convert(out),
             });
-
     await deletedStagedResult.stdout
         .transform(utf8.decoder)
         .forEach((String out) => {
               _currentDeleted.addAll(const LineSplitter().convert(out)),
             });
-
     await stagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
           _currentDataStaged = const LineSplitter().convert(out),
-          // DONE: Include deleted files when staged.
         });
-
     await unstagedResult.stdout
         .transform(utf8.decoder)
         .forEach((String out) => {
               _currentDataUnstaged = const LineSplitter().convert(out),
             });
 
+    // Extend deleted data to include repository root, and filter based on position.
     for (var i = _currentDeleted.length - 1; i >= 0; i--) {
-      var l = _currentDeleted[i];
-      _currentDeleted[i] = "$_location/$l";
+      var j = _current; // A version of _current that doesn't start with /.
+      if (j.startsWith("/")) {
+        j = j.replaceFirst("/", "");
+      }
+
+      bool m = false;
+      for (var k = 0; k < _currentData.length; k++) {
+        // If the current directory may include it.
+        if (_currentDeleted[i].startsWith(
+            _currentData[k].replaceAll("$_location$_current/", ""))) {
+          m = true;
+          break;
+        }
+      }
+
+      bool n = true;
+      if (j != "") {
+        n = _currentDeleted[i] == "$j/${_currentDeleted[i].split("/").last}";
+      }
+
+      if (n && !m) {
+        // If the current directory has been confirmed to include the item.
+        var l = _currentDeleted[i];
+        _currentDeleted[i] = "$_location/$l";
+      } else {
+        _currentDeleted.removeAt(i);
+      }
     }
 
+    // To filter, make the variable equivalent from an early point.
     var filesOnly = List.from(_currentDataStaged);
 
+    // Filter out and bring together staged and unstaged data.
     for (var i = 0; i < _currentDataStaged.length; i++) {
       var j = _currentDataStaged[i].split("/");
       var k = "";
@@ -124,7 +157,6 @@ class _MainState extends State<Main> {
         _currentDataStaged.add(k);
       }
     }
-
     for (var i = 0; i < _currentDataUnstaged.length; i++) {
       var j = _currentDataUnstaged[i].split("/");
       var k = "";
@@ -145,37 +177,38 @@ class _MainState extends State<Main> {
       }
     }
 
+    // Extend the staged + unstaged data to include the repository root.
     for (var i = 0; i < _currentDataStaged.length; i++) {
       var l = _currentDataStaged[i];
       _currentDataStaged[i] = "$_location/$l";
     }
-
     for (var i = 0; i < _currentDataUnstaged.length; i++) {
       var l = _currentDataUnstaged[i];
       _currentDataUnstaged[i] = "$_location/$l";
     }
 
+    // Bring together the existing and deleted data.
     _currentDataAndDeleted = List.from(_currentData)..addAll(_currentDeleted);
     setState(() {
+      // Also update the state.
       _currentDataAndDeleted.sort();
     });
 
+    // Apply the earlier filter to the current.
     _currentDataStagedFilesOnly = filesOnly;
   }
 
+  // Quick refresh void that executes all data commands.
   Future<void> _refresh() async {
     var deletedUnstagedResult = await Process.start(
         "git", ["ls-files", "--deleted"],
         workingDirectory: _location);
-
     var deletedStagedResult = await Process.start(
         "git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
         workingDirectory: _location);
-
     var stagedResult = await Process.start(
         "git", ["diff", "--name-only", "--staged"],
         workingDirectory: _location);
-
     var unstagedResult = await Process.start(
         "git", ["ls-files", "--exclude-standard", "--others", "-m"],
         workingDirectory: _location);
@@ -184,6 +217,7 @@ class _MainState extends State<Main> {
         unstagedResult);
   }
 
+  // Void to clone a repository. Hooks into dialog.
   Future<void> _cloneRepository(
       String repositoryToClone, String locationToCloneTo) async {
     await Process.run("git", ["clone", repositoryToClone],
@@ -198,6 +232,7 @@ class _MainState extends State<Main> {
     _refresh();
   }
 
+  // Void to initialize a new repository. Hooks into dialog.
   void _newRepository(String result) async {
     await Process.run("git", ["init"], workingDirectory: result);
 
@@ -206,6 +241,7 @@ class _MainState extends State<Main> {
     _refresh();
   }
 
+  // Void to create a new commit. Hooks into dialog and repository data.
   void _newCommit(String commitMessage) async {
     await Process.run("git", ["commit", "-m", commitMessage],
         workingDirectory: _location);
@@ -213,10 +249,10 @@ class _MainState extends State<Main> {
     _refresh();
   }
 
-  void _revertCommit(String revertCommit, String revertMessage) async { // FIXME: Fix revert.
+  // Void to revert an existing commit. Hooks into dialog.
+  void _revertCommit(String revertCommit, String revertMessage) async {
     await Process.run("git", ["revert", "--no-commit", revertCommit],
         workingDirectory: _location);
-
     await Process.run("git", ["commit", "-m", revertMessage],
         workingDirectory: _location);
 
@@ -227,6 +263,7 @@ class _MainState extends State<Main> {
 
   @override
   Widget build(BuildContext context) {
+    // Returns a normal or deleted color.
     Color deletedColor(var item) {
       if (_currentDeleted.contains(_currentDataAndDeleted[item])) {
         return colorMainItemDeleted;
@@ -235,6 +272,7 @@ class _MainState extends State<Main> {
       }
     }
 
+    // Returns an icon for staging for each item.
     IconData stagingIcon(var item) {
       if (_currentDataStaged.contains(_currentDataAndDeleted[item]) &&
           _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
@@ -249,6 +287,7 @@ class _MainState extends State<Main> {
       }
     }
 
+    // Returns a color for the icon function above.
     Color stagingIconColor(int item) {
       if (_currentDataStaged.contains(_currentDataAndDeleted[item]) &&
           _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
@@ -262,6 +301,7 @@ class _MainState extends State<Main> {
       }
     }
 
+    // Returns the name of the type of item.
     String typeName(int item) {
       if (_currentDeleted.contains(_currentDataAndDeleted[item])) {
         return "Deleted";
@@ -276,12 +316,16 @@ class _MainState extends State<Main> {
     return Scaffold(
       key: _key,
       appBar: AppBar(
+        // The top bar.
         backgroundColor: colorBarBg,
         foregroundColor: colorBarFg,
         title: Text(_location.split("/").last),
+        // Includes the name of the project.
         leading: SizedBox(
           width: 24,
           height: 24,
+          /* Context menu below gives options for cloning,
+          * initializing, or closing repository. */
           child: PopupMenuButton<int>(
             padding: const EdgeInsets.all(0.0),
             icon: const Icon(
@@ -342,6 +386,9 @@ class _MainState extends State<Main> {
           ),
         ),
         actions: [
+          /* Below gives actions for GitBang to handle, including
+          * new commits, reverting a commit, pulling and pushing
+          * commits, as well as simply refreshing manually. */
           Visibility(
             visible: _location != "null",
             child: Padding(
@@ -398,15 +445,14 @@ class _MainState extends State<Main> {
                       void work() async {
                         Future.delayed(
                             const Duration(seconds: 0),
-                                () =>
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      loadingContext = context;
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    }));
+                            () => showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (BuildContext context) {
+                                  loadingContext = context;
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }));
 
                         await Process.run("git", ["pull"],
                             workingDirectory: _location);
@@ -429,15 +475,14 @@ class _MainState extends State<Main> {
                       void work() async {
                         Future.delayed(
                             const Duration(seconds: 0),
-                                () =>
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      loadingContext = context;
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    }));
+                            () => showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (BuildContext context) {
+                                  loadingContext = context;
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }));
 
                         await Process.run("git", ["push"],
                             workingDirectory: _location);
@@ -463,6 +508,7 @@ class _MainState extends State<Main> {
               ),
             ),
           ),
+          // Below launches the sidebar with the commit history state.
           Visibility(
             visible: _location != "null",
             child: Padding(
@@ -483,6 +529,7 @@ class _MainState extends State<Main> {
               ),
             ),
           ),
+          // Below launches the sidebar with the branches view state.
           Visibility(
             visible: _location != "null",
             child: Padding(
@@ -511,7 +558,6 @@ class _MainState extends State<Main> {
                     _sidebarContentState = "branches";
                   });
                   _key.currentState!.openEndDrawer();
-                  // DONE: Show the branch list on click.
                 },
               ),
             ),
@@ -523,6 +569,7 @@ class _MainState extends State<Main> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Container(
+            // Contains the foundation for the list of items.
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.0),
               boxShadow: [
@@ -537,7 +584,9 @@ class _MainState extends State<Main> {
               borderRadius: BorderRadius.circular(12.0),
               child: Column(children: [
                 if (_location != 'null') ...[
+                  // Checking if a project is open,
                   if (_currentDataAndDeleted.isNotEmpty) ...[
+                    // and if there are existing items in the repository.
                     for (var i = 0; i < _currentDataAndDeleted.length; i++) ...[
                       Container(
                         decoration: const BoxDecoration(
@@ -556,6 +605,7 @@ class _MainState extends State<Main> {
                                     Padding(
                                       padding:
                                           const EdgeInsets.only(right: 8.0),
+                                      // Below has the item icon for staging status.
                                       child: SizedBox(
                                           width: 16,
                                           height: 16,
@@ -620,16 +670,17 @@ class _MainState extends State<Main> {
                                                   },
                                           )),
                                     ),
-                                    // FIXME: Refuses on certain directories.
+                                    // Below is the name of the item.
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () async {
-                                          if (await Directory(_currentData[i])
+                                          if (await Directory(
+                                                  _currentDataAndDeleted[i])
                                               .exists()) {
-                                            Directory(_currentData[i])
+                                            Directory(_currentDataAndDeleted[i])
                                                 .listSync();
 
-                                            _current = _currentData[i]
+                                            _current = _currentDataAndDeleted[i]
                                                 .replaceAll(_location, "");
 
                                             if (_current.split("/").last ==
@@ -655,7 +706,8 @@ class _MainState extends State<Main> {
                                           softWrap: false,
                                           textAlign: TextAlign.left,
                                           style: TextStyle(
-                                            color: deletedColor(i),
+                                            color: deletedColor(
+                                                i), // Can be recolored if deleted.
                                           ),
                                         ),
                                       ),
@@ -666,12 +718,16 @@ class _MainState extends State<Main> {
                               Row(
                                 //crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
+                                  // Below is a text box that shows the item type.
                                   Padding(
-                                    padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                                    padding: const EdgeInsets.only(
+                                        left: 8.0, right: 8.0),
                                     child: Text(typeName(i),
                                         style: const TextStyle(
                                             color: colorMainItemStatic)),
                                   ),
+                                  /* Below includes a context menu that allows you
+                                  * to manually stage, unstage, or restore an item.*/
                                   SizedBox(
                                     width: 16,
                                     height: 16,
@@ -742,6 +798,7 @@ class _MainState extends State<Main> {
                               ),
                             ]),
                       ),
+                      // Quick separator for the items.
                       if (i != _currentDataAndDeleted.length - 1)
                         Container(
                           // (Bottom border for decorations sake...)
@@ -752,6 +809,7 @@ class _MainState extends State<Main> {
                     ],
                   ] else ...[
                     const Padding(
+                      // Text box in case the repository has no items.
                       padding: EdgeInsets.all(16),
                       child: Flexible(
                         child: Text(
@@ -762,6 +820,7 @@ class _MainState extends State<Main> {
                     ),
                   ],
                 ] else ...[
+                  // Start page in case a repository isn't loaded.
                   const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text("LOGO HERE",
@@ -783,6 +842,7 @@ class _MainState extends State<Main> {
         ),
       ),
       endDrawer: Sidebar(_sidebarContentState, _branches, _location),
+      // Sidebar and all of it's arguments.
       onEndDrawerChanged: (isOpen) async {
         if (!isOpen) {
           _refresh();

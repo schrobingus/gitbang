@@ -383,12 +383,12 @@ class _SidebarState extends State<Sidebar> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8),
-                              child: Text(_historyPageList[i][0]),
+                              child: SelectableText(_historyPageList[i][0]),
                             ),
                             Flexible(
                               child: Padding(
                                 padding: const EdgeInsets.all(8),
-                                child: Text(_historyPageList[i][1],
+                                child: SelectableText(_historyPageList[i][1],
                                     textAlign: TextAlign.right),
                               ),
                             ),

@@ -34,7 +34,7 @@ AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
       TextButton(
           onPressed: () async {
             Navigator.of(context).pop();
-            revertCommitFunction(revertCommit.text, revertMessage.text);
+            await revertCommitFunction(revertCommit.text, revertMessage.text);
           },
           child: const Text("Apply")),
     ],

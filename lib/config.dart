@@ -1,24 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
-// TODO: Switch to ThemeData class.
+//                      Color(0xff212121)
+// Format for colors is           ^^^^^^ here (hex code)
 
-// Colors grabbed from https://www.materialpalette.com
-const Color colorBarBg = Color(0xffeeeeee); // The background for the top bar.
-const Color colorBarFg = Color(0xff212121); // The foreground for the top bar.
-const Color colorMainBg = Color(0xffe0e0e0); // The main background for the app.
-const Color colorMainSelectionBg = Color(0xffeeeeee); // The background for the selection.
-const Color colorMainSelectionFg = Color(0xff212121); // The foreground for the selection.
-const Color colorMainSeparator = Color(0xff757575); // The separator color for the selection.
-const Color colorMainItemStatic = Color(0xff212121); // The static color for items.
-const Color colorMainItemStaged = Color(0xff43a047); // The staged color for items.
-const Color colorMainItemUnstaged = Color(0xffe53935); // The unstaged color for items.
-const Color colorMainItemPartial = Color(0xff5e35b1); // The partially-staged color for items.
-const Color colorMainItemDeleted = Color(0xff757575); // The deleted color for items.
-const Color colorLoadingAnimation = Color(0xff212121); // The loading animation color.
-const Color colorSidebarBg = Color(0xffe0e0e0); // The background for the sidebar.
-const Color colorSidebarFg = Color(0xff212121); // The foreground for the sidebar.
-const Color colorSidebarItemBg = Color(0xffeeeeee); // The background for sidebar items.
-const Color colorSidebarSeparator = Color(0xff757575); // The separator color for the selection.
-const Color colorSidebarItemFg = Color(0xff212121); // The foreground for sidebar items.
-const Color colorSidebarItemSel = Color(0xff1e88e5); // The selected color for sidebar items.
-const Color colorSidebarItemDetach = Color(0xffe53935); // The selected-but-detached color for sidebar items.
+class Config {
+  static var brightness = SchedulerBinding.instance.window.platformBrightness;
+  static bool isDark = brightness == Brightness.dark;
+
+  static Color foregroundColor =
+      isDark ? const Color(0xfff5f5f5) : const Color(0xff212121);
+  static Color grayedForegroundColor =
+      isDark ? const Color(0xff9e9e9e) : const Color(0xff757575);
+
+  static List<Color> stateColors = [
+    isDark ? const Color(0xffe57373) : const Color(0xffe53935),
+    // Unstaged Item
+    isDark ? const Color(0xff81c784) : const Color(0xff43a047),
+    // Staged Item
+    isDark ? const Color(0xff9575cd) : const Color(0xff5e35b1),
+    // Partially Staged Item
+
+    isDark ? const Color(0xff64b5f6) : const Color(0xff1e88e5),
+    // Selected Branch
+    isDark ? const Color(0xffe57373) : const Color(0xffe53935),
+    // Selected Detached Branch
+  ];
+
+  static ThemeData theme = ThemeData(
+    primaryColor: isDark ? const Color(0xff424242) : const Color(0xffeeeeee),
+    backgroundColor: isDark ? const Color(0xff212121) : const Color(0xffe0e0e0),
+    textTheme: TextTheme(
+      bodyText1: TextStyle(
+          fontWeight: FontWeight.w400,
+          color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor:
+          isDark ? const Color(0xff424242) : const Color(0xffeeeeee),
+      foregroundColor:
+          isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
+    ),
+  );
+}

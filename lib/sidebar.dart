@@ -75,17 +75,18 @@ class _SidebarState extends State<Sidebar> {
     Color selectedColor(String i) {
       if (i[0] == '*') {
         if (i.contains("detached")) {
-          return colorSidebarItemDetach;
+          return Config
+              .stateColors[4]; // Selected detached color, refer to config.dart.
         } else {
-          return colorSidebarItemSel;
+          return Config.stateColors[3]; // Selected color. ^
         }
       } else {
-        return colorSidebarItemFg;
+        return Config.foregroundColor;
       }
     }
 
     return Drawer(
-      backgroundColor: colorSidebarBg,
+      backgroundColor: Theme.of(context).backgroundColor,
       child: SingleChildScrollView(
         child: Column(children: [
           if (widget.sidebarContent == "branches") ...[
@@ -95,11 +96,10 @@ class _SidebarState extends State<Sidebar> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Local",
-                        style: TextStyle(color: colorSidebarFg)),
+                    Text("Local", style: Theme.of(context).textTheme.bodyText1),
                     GestureDetector(
-                      child: const Text("+ Add New",
-                          style: TextStyle(color: colorSidebarFg)),
+                      child: Text("+ Add New",
+                          style: Theme.of(context).textTheme.bodyText1),
                       onTap: () {
                         TextEditingController branchName =
                             TextEditingController();
@@ -161,7 +161,7 @@ class _SidebarState extends State<Sidebar> {
                 padding: const EdgeInsets.all(8),
                 child: Container(
                     decoration: BoxDecoration(
-                      color: colorSidebarItemBg,
+                      color: Theme.of(context).primaryColor,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
@@ -182,8 +182,8 @@ class _SidebarState extends State<Sidebar> {
                                 .last
                                 .startsWith("remotes/")) ...[
                               Container(
-                                decoration: const BoxDecoration(
-                                  color: colorSidebarItemBg,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.only(
@@ -275,9 +275,12 @@ class _SidebarState extends State<Sidebar> {
                                                     .last;
                                               }
                                             }()),
-                                            style: TextStyle(
-                                                color: selectedColor(
-                                                    widget.sidebarBranches[i])),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText1
+                                                ?.apply(
+                                                    color: selectedColor(widget
+                                                        .sidebarBranches[i])),
                                           ),
                                         ],
                                       ),
@@ -296,25 +299,30 @@ class _SidebarState extends State<Sidebar> {
                                           (j) => !j.contains("remotes/"))) ...[
                                 Container(
                                   height: 1.25,
-                                  decoration: const BoxDecoration(
-                                      color: colorSidebarSeparator),
+                                  decoration: BoxDecoration(
+                                      color: Config.grayedForegroundColor),
                                 ),
                               ],
                             ],
                           ],
                         ])))),
-            const Padding(
-              padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0),
+            Padding(
+              padding:
+                  const EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0),
               child: Align(
                 alignment: Alignment.topLeft,
-                child: Text("Remote", style: TextStyle(color: colorSidebarFg)),
+                child: Text("Remote",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText1
+                        ?.apply(color: Config.foregroundColor)),
               ),
             ),
             Padding(
                 padding: const EdgeInsets.all(8),
                 child: Container(
                     decoration: BoxDecoration(
-                      color: colorSidebarItemBg,
+                      color: Theme.of(context).primaryColor,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
@@ -393,9 +401,12 @@ class _SidebarState extends State<Sidebar> {
                                               widget.sidebarBranches[i].length)
                                           .split(" -> ")
                                           .last,
-                                      style: TextStyle(
-                                          color: selectedColor(
-                                              widget.sidebarBranches[i])),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText1
+                                          ?.apply(
+                                              color: selectedColor(
+                                                  widget.sidebarBranches[i])),
                                     ),
                                   ),
                                 ),
@@ -411,8 +422,8 @@ class _SidebarState extends State<Sidebar> {
                                           (j) => j.contains("remotes/"))) ...[
                                 Container(
                                   height: 1.25,
-                                  decoration: const BoxDecoration(
-                                      color: colorSidebarSeparator),
+                                  decoration: BoxDecoration(
+                                      color: Config.grayedForegroundColor),
                                 ),
                               ],
                               // FIXME: For some reason, the function doesn't appear to be working.
@@ -428,7 +439,7 @@ class _SidebarState extends State<Sidebar> {
                       padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: colorSidebarItemBg,
+                          color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(8.0),
                           boxShadow: [
                             BoxShadow(
@@ -443,13 +454,16 @@ class _SidebarState extends State<Sidebar> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8),
-                              child: SelectableText(_historyPageList[i][0]),
+                              child: SelectableText(_historyPageList[i][0],
+                                  style: Theme.of(context).textTheme.bodyText1),
                             ),
                             Flexible(
                               child: Padding(
                                 padding: const EdgeInsets.all(8),
                                 child: SelectableText(_historyPageList[i][1],
-                                    textAlign: TextAlign.right),
+                                    textAlign: TextAlign.right,
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1),
                               ),
                             ),
                           ],
@@ -458,16 +472,19 @@ class _SidebarState extends State<Sidebar> {
                     ),
                   ],
                 ] else ...[
-                  const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(child: CircularProgressIndicator())),
+                  Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                        color: Config.foregroundColor,
+                      ))),
                 ],
                 if (_historyPageAmount != 1) ...[
                   Padding(
                       padding: const EdgeInsets.only(top: 12.0),
                       child: Container(
                           decoration: BoxDecoration(
-                            color: colorSidebarItemBg,
+                            color: Theme.of(context).primaryColor,
                             boxShadow: [
                               BoxShadow(
                                 blurRadius: 5,
@@ -483,8 +500,8 @@ class _SidebarState extends State<Sidebar> {
                                   width: 24,
                                   height: 24,
                                   child: IconButton(
-                                    icon: const Icon(
-                                        Icons.keyboard_double_arrow_left),
+                                    icon: Icon(Icons.keyboard_double_arrow_left,
+                                        color: Config.foregroundColor),
                                     padding: const EdgeInsets.all(0.0),
                                     onPressed: () {
                                       setState(() {
@@ -498,7 +515,8 @@ class _SidebarState extends State<Sidebar> {
                                   width: 24,
                                   height: 24,
                                   child: IconButton(
-                                    icon: const Icon(Icons.keyboard_arrow_left),
+                                    icon: Icon(Icons.keyboard_arrow_left,
+                                        color: Config.foregroundColor),
                                     padding: const EdgeInsets.all(0.0),
                                     onPressed: () {
                                       if (_historyPageNumber > 0) {
@@ -514,7 +532,8 @@ class _SidebarState extends State<Sidebar> {
                                   padding: const EdgeInsets.all(12),
                                   child: Text(
                                     "${_historyPageNumber + 1}/$_historyPageAmount",
-                                    style: const TextStyle(
+                                    style: TextStyle(
+                                        color: Config.foregroundColor,
                                         fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -522,8 +541,8 @@ class _SidebarState extends State<Sidebar> {
                                   width: 24,
                                   height: 24,
                                   child: IconButton(
-                                    icon:
-                                        const Icon(Icons.keyboard_arrow_right),
+                                    icon: Icon(Icons.keyboard_arrow_right,
+                                        color: Config.foregroundColor),
                                     padding: const EdgeInsets.all(0.0),
                                     onPressed: () {
                                       if (_historyPageNumber <
@@ -541,8 +560,9 @@ class _SidebarState extends State<Sidebar> {
                                   width: 24,
                                   height: 24,
                                   child: IconButton(
-                                    icon: const Icon(
-                                        Icons.keyboard_double_arrow_right),
+                                    icon: Icon(
+                                        Icons.keyboard_double_arrow_right,
+                                        color: Config.foregroundColor),
                                     padding: const EdgeInsets.all(0.0),
                                     onPressed: () {
                                       setState(() {

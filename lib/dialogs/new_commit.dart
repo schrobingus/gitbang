@@ -11,10 +11,13 @@ AlertDialog newCommitDialog(
       height: 200,
       child: Column(
         children: [
-          TextField(
-            controller: commitMessage,
-            decoration: const InputDecoration(
-              hintText: "Message",
+          SizedBox(
+            width: 240,
+            child: TextField(
+              controller: commitMessage,
+              decoration: const InputDecoration(
+                hintText: "Message",
+              ),
             ),
           ),
           const Padding(
@@ -37,9 +40,11 @@ AlertDialog newCommitDialog(
                 scrollDirection: Axis.horizontal,
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
-                  child: Text(
+                  child: SelectableText(
                     commitChanges,
                     style: const TextStyle(
+                      fontFamily: 'Menlo',
+                      fontFamilyFallback: ['monospace'],
                       fontSize: 12.0,
                     ),
                   ),
@@ -62,16 +67,14 @@ AlertDialog newCommitDialog(
 
             try {
               newCommitFunction(commitMessage.text);
-            } catch(e) {
+            } catch (e) {
               Future.delayed(
                   const Duration(seconds: 0),
-                      () => showDialog(
+                  () => showDialog(
                       context: context,
-                      builder:
-                          (BuildContext context) {
+                      builder: (BuildContext context) {
                         return errorMessageDialog(
-                            context,
-                            "Unable to create commit.");
+                            context, "Unable to create commit.");
                       }));
             }
           },

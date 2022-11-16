@@ -6,6 +6,8 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
   TextEditingController repositoryToClone = TextEditingController();
   TextEditingController locationToCloneTo = TextEditingController();
 
+  bool cloneRecursively = true;
+
   return AlertDialog(
     title: const Text('Clone Repository'),
     content: SizedBox(
@@ -29,6 +31,18 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
                       (await FilePicker.platform.getDirectoryPath())!;
                 },
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: cloneRecursively,
+                  onChanged: (bool? i) {},
+                ),
+                const Text("Clone submodules? (recursive)"),
+              ],
             ),
           ),
         ],
@@ -60,17 +74,15 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
 
               try {
                 await cloneRepoFunction(
-                    repositoryToClone.text, locationToCloneTo.text);
-              } catch(e) {
+                    repositoryToClone.text, locationToCloneTo.text, cloneRecursively);
+              } catch (e) {
                 Future.delayed(
                     const Duration(seconds: 0),
-                        () => showDialog(
+                    () => showDialog(
                         context: context,
-                        builder:
-                            (BuildContext context) {
+                        builder: (BuildContext context) {
                           return errorMessageDialog(
-                              context,
-                              "Unable to clone repository.");
+                              context, "Unable to clone repository.");
                         }));
                 pop();
               }

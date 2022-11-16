@@ -10,6 +10,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Import the created scripts.
 import 'package:gitbang/config.dart'; // Includes configuration options.
 import 'package:gitbang/dialogs/clone_repository.dart'; // Dialog for cloning repositories.
+import 'package:gitbang/dialogs/edit_gitignore.dart'; // Dialog for cloning repositories.
+import 'package:gitbang/dialogs/edit_submodules.dart'; // Dialog for cloning repositories.
 import 'package:gitbang/dialogs/error.dart'; // Dialog for error messages.
 import 'package:gitbang/dialogs/new_repository.dart'; // Dialog for initializing a new repository.
 import 'package:gitbang/dialogs/new_commit.dart'; // Dialog for new commits.
@@ -233,10 +235,17 @@ class _MainState extends State<Main> {
   }
 
   // Void to clone a repository. Hooks into dialog.
-  Future<void> _cloneRepository(
-      String repositoryToClone, String locationToCloneTo) async {
-    await Process.run("git", ["clone", repositoryToClone],
-        workingDirectory: locationToCloneTo);
+  Future<void> _cloneRepository(String repositoryToClone,
+      String locationToCloneTo, bool cloneRecursively) async {
+    late List<String> commandToRun;
+
+    if (cloneRecursively) {
+      commandToRun = ["clone", "--recursive", repositoryToClone];
+    } else {
+      commandToRun = ["clone", repositoryToClone];
+    }
+
+    await Process.run("git", commandToRun, workingDirectory: locationToCloneTo);
 
     var i = repositoryToClone.split("/").last;
     var j = locationToCloneTo;
@@ -332,21 +341,24 @@ class _MainState extends State<Main> {
     return Scaffold(
       key: _key,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
+        preferredSize: const Size.fromHeight(40),
         child: AppBar(
           // The top bar.
-          title: Text(_location.split("/").last),
+          title: SelectableText(_location.split("/").last,
+              style:
+                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w400)),
+          titleSpacing: 0,
           // Includes the name of the project.
           leading: SizedBox(
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
             /* Context menu below gives options for cloning,
           * initializing, or closing repository. */
             child: PopupMenuButton<int>(
-              padding: const EdgeInsets.all(0.0),
+              padding: const EdgeInsets.all(0),
               icon: const Icon(
                 Icons.add,
-                size: 24.0,
+                size: 20.0,
               ),
               tooltip: "Load",
               itemBuilder: (context) => [
@@ -410,142 +422,164 @@ class _MainState extends State<Main> {
             Visibility(
               visible: _location != "null",
               child: Padding(
-                padding: const EdgeInsets.only(right: 10.0),
-                child: PopupMenuButton<int>(
-                  padding: const EdgeInsets.all(0.0),
-                  icon: const Icon(
-                    Icons.more_horiz,
-                    size: 24.0,
-                  ),
-                  tooltip: "Options",
-                  itemBuilder: (context) => [
-                    PopupMenuItem<int>(
-                      enabled: _currentDataStaged.isNotEmpty,
-                      child: const Text("New Commit"),
-                      onTap: () {
-                        String commitChanges = _currentDataStagedFilesOnly
-                            .join("\n")
-                            .replaceAll(_location, "");
-
-                        Future.delayed(
-                            const Duration(seconds: 0),
-                            () => showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return newCommitDialog(
-                                      context, _newCommit, commitChanges);
-                                }));
-                      },
+                padding: const EdgeInsets.only(right: 18),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: PopupMenuButton<int>(
+                    padding: const EdgeInsets.all(0),
+                    icon: const Icon(
+                      Icons.more_horiz,
+                      size: 20.0,
                     ),
-                    PopupMenuItem<int>(
-                      child: const Text("Revert Commit"),
-                      onTap: () {
-                        Future.delayed(
-                            const Duration(seconds: 0),
-                            () => showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return revertCommitDialog(
-                                      context, _revertCommit);
-                                }));
-                      },
-                    ),
-                    const PopupMenuDivider(),
-                    PopupMenuItem<int>(
-                      child: const Text("Pull Commits"),
-                      onTap: () async {
-                        late BuildContext loadingContext;
+                    tooltip: "Options",
+                    itemBuilder: (context) => [
+                      PopupMenuItem<int>(
+                        enabled: _currentDataStaged.isNotEmpty,
+                        child: const Text("New Commit"),
+                        onTap: () {
+                          String commitChanges = _currentDataStagedFilesOnly
+                              .join("\n")
+                              .replaceAll(_location, "");
 
-                        void pop() {
-                          Navigator.of(loadingContext).pop();
-                        }
-
-                        void work() async {
                           Future.delayed(
                               const Duration(seconds: 0),
                               () => showDialog(
-                                  barrierDismissible: false,
                                   context: context,
                                   builder: (BuildContext context) {
-                                    loadingContext = context;
-                                    return const Center(
-                                        child: CircularProgressIndicator());
+                                    return newCommitDialog(
+                                        context, _newCommit, commitChanges);
                                   }));
-
-                          try {
-                            await Process.run("git", ["pull"],
-                                workingDirectory: _location);
-                          } catch (e) {
-                            Future.delayed(
-                                const Duration(seconds: 0),
-                                () => showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return errorMessageDialog(context,
-                                          "Could not pull new commits from repository.");
-                                    }));
-                          }
-                          await _refresh();
-                          pop();
-                        }
-
-                        work();
-                      },
-                    ),
-                    PopupMenuItem<int>(
-                      child: const Text("Push Commits"),
-                      onTap: () {
-                        late BuildContext loadingContext;
-
-                        void pop() {
-                          Navigator.of(loadingContext).pop();
-                        }
-
-                        void work() async {
+                        },
+                      ),
+                      PopupMenuItem<int>(
+                        child: const Text("Revert Commit"),
+                        onTap: () {
                           Future.delayed(
                               const Duration(seconds: 0),
                               () => showDialog(
-                                  barrierDismissible: false,
                                   context: context,
                                   builder: (BuildContext context) {
-                                    loadingContext = context;
-                                    return const Center(
-                                        child: CircularProgressIndicator());
+                                    return revertCommitDialog(
+                                        context, _revertCommit);
                                   }));
+                        },
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<int>(
+                        child: const Text("Pull Commits"),
+                        onTap: () async {
+                          late BuildContext loadingContext;
 
-                          try {
-                            await Process.run("git", ["push"],
-                                workingDirectory: _location);
-                          } catch (e) {
+                          void pop() {
+                            Navigator.of(loadingContext).pop();
+                          }
+
+                          void work() async {
                             Future.delayed(
                                 const Duration(seconds: 0),
                                 () => showDialog(
+                                    barrierDismissible: false,
                                     context: context,
                                     builder: (BuildContext context) {
-                                      return errorMessageDialog(context,
-                                          "Could not push local commits to repository.");
+                                      loadingContext = context;
+                                      return const Center(
+                                          child: CircularProgressIndicator());
                                     }));
+
+                            try {
+                              await Process.run("git", ["pull"],
+                                  workingDirectory: _location);
+                            } catch (e) {
+                              Future.delayed(
+                                  const Duration(seconds: 0),
+                                  () => showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return errorMessageDialog(context,
+                                            "Could not pull new commits from repository.");
+                                      }));
+                            }
+                            await _refresh();
+                            pop();
                           }
 
-                          await _refresh();
-                          pop();
-                        }
+                          work();
+                        },
+                      ),
+                      PopupMenuItem<int>(
+                        child: const Text("Push Commits"),
+                        onTap: () {
+                          late BuildContext loadingContext;
 
-                        work();
-                      },
-                    ),
-                    PopupMenuItem<int>(
-                      child: const Text("Refresh"),
-                      onTap: () {
-                        _refresh();
-                      },
-                    ),
-                    /*const PopupMenuDivider(),
+                          void pop() {
+                            Navigator.of(loadingContext).pop();
+                          }
+
+                          void work() async {
+                            Future.delayed(
+                                const Duration(seconds: 0),
+                                () => showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      loadingContext = context;
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    }));
+
+                            try {
+                              await Process.run("git", ["push"],
+                                  workingDirectory: _location);
+                            } catch (e) {
+                              Future.delayed(
+                                  const Duration(seconds: 0),
+                                  () => showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return errorMessageDialog(context,
+                                            "Could not push local commits to repository.");
+                                      }));
+                            }
+
+                            await _refresh();
+                            pop();
+                          }
+
+                          work();
+                        },
+                      ),
+                      PopupMenuItem<int>(
+                        child: const Text("Refresh"),
+                        onTap: () {
+                          _refresh();
+                        },
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<int>(
+                        child: const Text("Edit Gitignore"),
+                        onTap: () {
+                          Future.delayed(
+                              const Duration(seconds: 0),
+                              () => showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return editGitignoreDialog(
+                                        context, _location, _current, _refresh);
+                                  }));
+                        },
+                      ),
+                      PopupMenuItem<int>(
+                        child: const Text("Edit Submodules"),
+                        onTap: () {},
+                      ),
+                      /*const PopupMenuDivider(),
                 PopupMenuItem<int>(
                   child: const Text("Preferences"),
                   onTap: () {},
                 ),*/
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -553,20 +587,24 @@ class _MainState extends State<Main> {
             Visibility(
               visible: _location != "null",
               child: Padding(
-                padding: const EdgeInsets.only(right: 10.0),
-                child: IconButton(
-                  padding: const EdgeInsets.all(0.0),
-                  icon: const Icon(
-                    Icons.history,
-                    size: 24.0,
+                padding: const EdgeInsets.only(right: 18),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: IconButton(
+                    padding: const EdgeInsets.all(0),
+                    icon: const Icon(
+                      Icons.history,
+                      size: 20.0,
+                    ),
+                    tooltip: "Commit History",
+                    onPressed: () async {
+                      setState(() {
+                        _sidebarContentState = "history";
+                      });
+                      _key.currentState!.openEndDrawer();
+                    },
                   ),
-                  tooltip: "Commit History",
-                  onPressed: () async {
-                    setState(() {
-                      _sidebarContentState = "history";
-                    });
-                    _key.currentState!.openEndDrawer();
-                  },
                 ),
               ),
             ),
@@ -574,35 +612,39 @@ class _MainState extends State<Main> {
             Visibility(
               visible: _location != "null",
               child: Padding(
-                padding: const EdgeInsets.only(right: 10.0),
-                child: IconButton(
-                  padding: const EdgeInsets.all(0.0),
-                  icon: const Icon(
-                    Icons.account_tree_outlined,
-                    size: 24.0,
+                padding: const EdgeInsets.only(right: 20),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: IconButton(
+                    padding: const EdgeInsets.all(0),
+                    icon: const Icon(
+                      Icons.account_tree_outlined,
+                      size: 20,
+                    ),
+                    tooltip: "Branches",
+                    onPressed: () async {
+                      _branches = [];
+
+                      var branchResult = await Process.start(
+                          "git", ["branch", "-a"],
+                          workingDirectory: _location);
+
+                      await branchResult.stdout
+                          .transform(utf8.decoder)
+                          .forEach((String out) => {
+                                setState(() {
+                                  _branches = const LineSplitter().convert(out);
+                                  _branches.sort();
+                                }),
+                              });
+
+                      setState(() {
+                        _sidebarContentState = "branches";
+                      });
+                      _key.currentState!.openEndDrawer();
+                    },
                   ),
-                  tooltip: "Branches",
-                  onPressed: () async {
-                    _branches = [];
-
-                    var branchResult = await Process.start(
-                        "git", ["branch", "-a"],
-                        workingDirectory: _location);
-
-                    await branchResult.stdout
-                        .transform(utf8.decoder)
-                        .forEach((String out) => {
-                              setState(() {
-                                _branches = const LineSplitter().convert(out);
-                                _branches.sort();
-                              }),
-                            });
-
-                    setState(() {
-                      _sidebarContentState = "branches";
-                    });
-                    _key.currentState!.openEndDrawer();
-                  },
                 ),
               ),
             ),
@@ -814,21 +856,57 @@ class _MainState extends State<Main> {
                                                   _refresh();
                                                 }
                                               },
-                                              child: Text(
-                                                _currentDataAndDeleted[i]
-                                                    .replaceAll(
-                                                        "$_location$_current",
-                                                        "")
-                                                    .substring(1),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.fade,
-                                                softWrap: false,
-                                                textAlign: TextAlign.left,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText1
-                                                    ?.apply(
-                                                        color: deletedColor(i)),
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    _currentDataAndDeleted[i]
+                                                        .replaceAll(
+                                                            "$_location$_current",
+                                                            "")
+                                                        .substring(1),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.fade,
+                                                    softWrap: false,
+                                                    textAlign: TextAlign.left,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText1
+                                                        ?.apply(
+                                                            color: deletedColor(
+                                                                i)),
+                                                  ),
+                                                  if (_currentDataAndDeleted[i]
+                                                          .replaceAll(
+                                                              "$_location$_current",
+                                                              "")
+                                                          .substring(1) ==
+                                                      "..") ...[
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 4),
+                                                      child: Icon(
+                                                          Icons
+                                                              .keyboard_double_arrow_left,
+                                                          color: Config
+                                                              .foregroundColor,
+                                                          size: 16),
+                                                    ),
+                                                  ] else if (typeName(i) ==
+                                                      "Directory") ...[
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 4),
+                                                      child: Icon(
+                                                          Icons
+                                                              .keyboard_double_arrow_right,
+                                                          color: Config
+                                                              .foregroundColor,
+                                                          size: 16),
+                                                    ),
+                                                  ],
+                                                ],
                                               ),
                                             ),
                                           ),

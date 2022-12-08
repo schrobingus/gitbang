@@ -564,14 +564,23 @@ class _MainState extends State<Main> {
                               () => showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return editGitignoreDialog(
-                                        context, _location, _current, _refresh);
+                                    return EditGitignoreDialog(
+                                        _location, _current, _refresh);
                                   }));
                         },
                       ),
                       PopupMenuItem<int>(
                         child: const Text("Edit Submodules"),
-                        onTap: () {},
+                        onTap: () {
+                          Future.delayed(
+                              const Duration(seconds: 0),
+                              () => showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return EditSubmodulesDialog(
+                                        _location, _current, _refresh);
+                                  }));
+                        },
                       ),
                       /*const PopupMenuDivider(),
                 PopupMenuItem<int>(

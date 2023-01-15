@@ -617,6 +617,30 @@ class _MainState extends State<Main> {
                 ),
               ),
             ),
+            Visibility(
+              visible: _location != "null",
+              child: Padding(
+                padding: const EdgeInsets.only(right: 18),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: IconButton(
+                    padding: const EdgeInsets.all(0),
+                    icon: const Icon(
+                      Icons.move_to_inbox_sharp,
+                      size: 20.0,
+                    ),
+                    tooltip: "View Stash",
+                    onPressed: () async {
+                      setState(() {
+                        _sidebarContentState = "stash";
+                      });
+                      _key.currentState!.openEndDrawer();
+                    },
+                  ),
+                ),
+              ),
+            ),
             // Below launches the sidebar with the branches view state.
             Visibility(
               visible: _location != "null",
@@ -628,7 +652,7 @@ class _MainState extends State<Main> {
                   child: IconButton(
                     padding: const EdgeInsets.all(0),
                     icon: const Icon(
-                      Icons.account_tree_outlined,
+                      Icons.account_tree_sharp,
                       size: 20,
                     ),
                     tooltip: "Branches",

@@ -12,7 +12,10 @@ class _SidebarState extends State<Sidebar> {
   bool _showHistory = false;
   bool _historyEmpty = false;
 
-  Future<void> _refreshPage() async {
+  var _stashList = [];
+  bool _stashRefreshed = false;
+
+  Future<void> _refreshHistory() async {
     setState(() {
       _showHistory = false;
     });
@@ -73,17 +76,55 @@ class _SidebarState extends State<Sidebar> {
     }
   }
 
-  bool includesLocals(var n) =>
+  Future<void> _refreshStashList() async {
+    setState(() {
+      _stashRefreshed = false;
+    });
+
+    var stashListEarly = [];
+
+    var stashListProcess = await Process.start("git", ["stash", "list"],
+        workingDirectory: widget.targetLocation);
+
+    await stashListProcess.stdout
+        .transform(utf8.decoder)
+        .forEach((String out) => {
+              setState(() {
+                stashListEarly = const LineSplitter().convert(out);
+                stashListEarly.sort();
+              }),
+            });
+
+    _stashList = [];
+    for (var i = 0; i < stashListEarly.length; i++) {
+      _stashList.add([
+        stashListEarly[i].split(": ")[0], // Stash ID
+        stashListEarly[i].split(": ")[1], // Stash Status
+        // Stash Description
+        stashListEarly[i]
+            .replaceAll("${stashListEarly[i].split(": ")[0]}: ", "")
+            .replaceAll("${stashListEarly[i].split(": ")[1]}: ", "")
+      ]);
+    }
+
+    setState(() {
+      _stashRefreshed = true;
+    });
+  }
+
+  bool _includesLocals(var n) =>
       !(n.substring(2, n.length).split(" -> ").last.startsWith("remotes/"));
 
-  bool includesRemotes(var n) =>
+  bool _includesRemotes(var n) =>
       (n.substring(2, n.length).split(" -> ").last.startsWith("remotes/"));
 
   @override
   void initState() {
     super.initState();
     if (widget.sidebarContent == "history") {
-      _refreshPage();
+      _refreshHistory();
+    } else if (widget.sidebarContent == "stash") {
+      _refreshStashList();
     }
   }
 
@@ -165,6 +206,7 @@ class _SidebarState extends State<Sidebar> {
                                                             "Could not create branch.");
                                                       }));
                                             }
+                                            setState(() {});
                                           },
                                           child: const Text("Add")),
                                     ],
@@ -174,7 +216,7 @@ class _SidebarState extends State<Sidebar> {
                     ),
                   ]),
             ),
-            if (widget.sidebarBranches.any(includesLocals)) ...[
+            if (widget.sidebarBranches.any(_includesLocals)) ...[
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: Container(
@@ -344,7 +386,7 @@ class _SidebarState extends State<Sidebar> {
                         ?.apply(color: Config.foregroundColor)),
               ),
             ),
-            if (widget.sidebarBranches.any(includesRemotes)) ...[
+            if (widget.sidebarBranches.any(_includesRemotes)) ...[
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: Container(
@@ -555,7 +597,7 @@ class _SidebarState extends State<Sidebar> {
                                 setState(() {
                                   _historyPageNumber = 0;
                                 });
-                                _refreshPage();
+                                _refreshHistory();
                               },
                             ),
                           ),
@@ -572,7 +614,7 @@ class _SidebarState extends State<Sidebar> {
                                     _historyPageNumber--;
                                   });
                                 }
-                                _refreshPage();
+                                _refreshHistory();
                               },
                             ),
                           ),
@@ -600,7 +642,7 @@ class _SidebarState extends State<Sidebar> {
                                   });
                                 }
 
-                                _refreshPage();
+                                _refreshHistory();
                               },
                             ),
                           ),
@@ -615,7 +657,7 @@ class _SidebarState extends State<Sidebar> {
                                 setState(() {
                                   _historyPageNumber = _historyPageAmount - 1;
                                 });
-                                _refreshPage();
+                                _refreshHistory();
                               },
                             ),
                           ),
@@ -626,6 +668,83 @@ class _SidebarState extends State<Sidebar> {
                 ],
               ],
             ),
+          ] else if (widget.sidebarContent == "stash") ...[
+            if (_stashRefreshed) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Stashes",
+                        style: Theme.of(context).textTheme.bodyText1),
+                    GestureDetector(
+                        child: Text("+ Make New",
+                            style: Theme.of(context).textTheme.bodyText1)),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 5,
+                        color: Colors.black.withOpacity(.4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < _stashList.length; i++) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left: 10, right: 10, top: 7.5, bottom: 7.5),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Flexible(
+                                    child: SelectableText.rich(TextSpan(
+                                  children: [
+                                    TextSpan(
+                                        text: "${_stashList[i][2]}  ",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1),
+                                    TextSpan(
+                                        text: _stashList[i][0],
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1
+                                            ?.apply(
+                                                color: Config
+                                                    .grayedForegroundColor)),
+                                  ],
+                                ))),
+                                SelectableText(_stashList[i][1],
+                                    style:
+                                        Theme.of(context).textTheme.bodyText1),
+                              ],
+                            ),
+                          ),
+                          if (i != _stashList.length - 1) ...[
+                            Container(
+                              height: 1.25,
+                              color: Config.grayedForegroundColor,
+                            ),
+                          ]
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ]),
       ),

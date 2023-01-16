@@ -1136,7 +1136,7 @@ class _MainState extends State<Main> {
           ),
         ),
       ),
-      endDrawer: Sidebar(_sidebarContentState, _branches, _location),
+      endDrawer: Sidebar(_sidebarContentState, _branches, _location, _refresh),
       // Sidebar and all of it's arguments.
       onEndDrawerChanged: (isOpen) async {
         if (!isOpen) {

@@ -94,6 +94,7 @@ class _SidebarState extends State<Sidebar> {
                 stashListEarly.sort();
               }),
             });
+    // FIXME: Sometimes, stashes do not show up. Optimize and fix later.
 
     _stashList = [];
     for (var i = 0; i < stashListEarly.length; i++) {
@@ -677,9 +678,57 @@ class _SidebarState extends State<Sidebar> {
                   children: [
                     Text("Stashes",
                         style: Theme.of(context).textTheme.bodyText1),
+                    // TODO: Add a button to refresh the stash entries.
                     GestureDetector(
                         child: Text("+ Make New",
-                            style: Theme.of(context).textTheme.bodyText1)),
+                            style: Theme.of(context).textTheme.bodyText1),
+                        onTap: () {
+                          TextEditingController stashName =
+                              TextEditingController();
+                          Future.delayed(
+                              const Duration(seconds: 0),
+                              () => showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text("New Stash"),
+                                      content: TextField(
+                                        controller: stashName,
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              "Stash Description (optional)",
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text("Cancel")),
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+
+                                              List<String> stashArgs = [
+                                                "stash",
+                                                "save"
+                                              ];
+                                              if (stashName.text != "") {
+                                                stashArgs.add(stashName.text);
+                                              }
+
+                                              Process.run("git", stashArgs,
+                                                  workingDirectory:
+                                                      widget.targetLocation);
+
+                                              widget.targetRefresh();
+                                              _refreshStashList();
+                                            },
+                                            child: const Text("Apply")),
+                                      ],
+                                    );
+                                  }));
+                        }),
                   ],
                 ),
               ),
@@ -726,9 +775,65 @@ class _SidebarState extends State<Sidebar> {
                                                     .grayedForegroundColor)),
                                   ],
                                 ))),
-                                SelectableText(_stashList[i][1],
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1),
+                                Row(
+                                  children: [
+                                    SelectableText(_stashList[i][1],
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1),
+                                    SizedBox(
+                                      width: 20,
+                                      height: 16,
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.check,
+                                          color: Config.foregroundColor,
+                                          size: 16,
+                                        ),
+                                        padding: const EdgeInsets.all(0),
+                                        onPressed: () {
+                                          Process.run(
+                                              "git",
+                                              [
+                                                "stash",
+                                                "apply",
+                                                _stashList[i][0]
+                                              ],
+                                              workingDirectory:
+                                                  widget.targetLocation);
+
+                                          widget.targetRefresh();
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 20,
+                                      height: 16,
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.close,
+                                          color: Config.foregroundColor,
+                                          size: 16,
+                                        ),
+                                        padding: const EdgeInsets.all(0),
+                                        onPressed: () {
+                                          Process.run(
+                                              "git",
+                                              [
+                                                "stash",
+                                                "drop",
+                                                _stashList[i][0]
+                                              ],
+                                              workingDirectory:
+                                                  widget.targetLocation);
+
+                                          widget.targetRefresh();
+                                          _refreshStashList();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
@@ -756,8 +861,10 @@ class Sidebar extends StatefulWidget {
   final String sidebarContent;
   final List sidebarBranches;
   final String targetLocation;
+  final VoidCallback targetRefresh;
 
-  const Sidebar(this.sidebarContent, this.sidebarBranches, this.targetLocation);
+  const Sidebar(this.sidebarContent, this.sidebarBranches, this.targetLocation,
+      this.targetRefresh);
 
   @override
   State<Sidebar> createState() => _SidebarState();

@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart'; // Flutter Material dependency.
+import 'package:flutter/material.dart';
+import 'package:gitbang/config.dart'; // Flutter Material dependency.
 
 class EditSubmodulesDialog extends StatefulWidget {
   final String location;
@@ -99,9 +100,11 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
           ? SizedBox(
               width: MediaQuery.of(context).size.width,
               child: Table(
-                border: const TableBorder(
-                  horizontalInside: BorderSide(width: 1.5, color: Colors.black),
-                  verticalInside: BorderSide(width: 1.5, color: Colors.black),
+                border: TableBorder(
+                  horizontalInside:
+                      BorderSide(width: 1.5, color: Config.foregroundColor),
+                  verticalInside:
+                      BorderSide(width: 1.5, color: Config.foregroundColor),
                 ),
                 columnWidths: <int, TableColumnWidth>{
                   0: const IntrinsicColumnWidth(),
@@ -112,18 +115,21 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                 children: [
                   TableRow(
                     children: [
-                      const Padding(
-                          padding: EdgeInsets.all(6),
+                      Padding(
+                          padding: const EdgeInsets.all(6),
                           child: Text("Name   ",
-                              style: TextStyle(color: Colors.grey))),
-                      const Padding(
-                          padding: EdgeInsets.all(6),
+                              style: TextStyle(
+                                  color: Config.grayedForegroundColor))),
+                      Padding(
+                          padding: const EdgeInsets.all(6),
                           child: Text("Path   ",
-                              style: TextStyle(color: Colors.grey))),
-                      const Padding(
-                          padding: EdgeInsets.all(6),
+                              style: TextStyle(
+                                  color: Config.grayedForegroundColor))),
+                      Padding(
+                          padding: const EdgeInsets.all(6),
                           child: Text("URL    ",
-                              style: TextStyle(color: Colors.grey))),
+                              style: TextStyle(
+                                  color: Config.grayedForegroundColor))),
                       Container(),
                     ],
                   ),
@@ -135,28 +141,28 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                             child: SelectableText("${submodules[i][0]}   ",
                                 style: TextStyle(
                                     color: submodules[i][0] != "null"
-                                        ? Colors.black
-                                        : Colors.grey))),
+                                        ? Config.foregroundColor
+                                        : Config.grayedForegroundColor))),
                         Padding(
                             padding: const EdgeInsets.all(6),
                             child: SelectableText("${submodules[i][1]}   ",
                                 style: TextStyle(
                                     color: submodules[i][0] != "null"
-                                        ? Colors.black
-                                        : Colors.grey))),
+                                        ? Config.foregroundColor
+                                        : Config.grayedForegroundColor))),
                         Padding(
                             padding: const EdgeInsets.all(6),
                             child: SelectableText("${submodules[i][2]}  ",
                                 style: TextStyle(
                                     color: submodules[i][0] != "null"
-                                        ? Colors.black
-                                        : Colors.grey))),
+                                        ? Config.foregroundColor
+                                        : Config.grayedForegroundColor))),
                         SizedBox(
                           width: 24,
                           height: 24,
                           child: IconButton(
                             padding: const EdgeInsets.only(top: 3),
-                            icon: const Icon(Icons.delete, color: Colors.black),
+                            icon: Icon(Icons.delete, color: Config.foregroundColor),
                             onPressed: () async {
                               await Process.run(
                                   "git", ["rm", "-rf", submodules[i][1]],
@@ -226,8 +232,8 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                                 child: IconButton(
                                   padding:
                                       const EdgeInsets.only(top: 3, left: 2),
-                                  icon: const Icon(Icons.check_circle,
-                                      color: Colors.black),
+                                  icon: Icon(Icons.check_circle,
+                                      color: Config.foregroundColor),
                                   onPressed: () async {
                                     setState(() {
                                       submoduleBeingAdded = true;
@@ -261,8 +267,8 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                                 height: 24,
                                 child: IconButton(
                                   padding: const EdgeInsets.only(top: 3),
-                                  icon: const Icon(Icons.cancel,
-                                      color: Colors.black),
+                                  icon: Icon(Icons.cancel,
+                                      color: Config.foregroundColor),
                                   onPressed: () {
                                     setState(() {
                                       submodulesNewName.text = "";
@@ -274,14 +280,14 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                                 ),
                               ),
                             ] else ...[
-                              const Padding(
-                                padding: EdgeInsets.only(left: 14, top: 5),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 14, top: 5),
                                 child: Center(
                                   child: SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
-                                        color: Colors.black),
+                                        color: Config.foregroundColor),
                                   ),
                                 ),
                               ),

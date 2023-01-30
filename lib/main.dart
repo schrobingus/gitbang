@@ -363,7 +363,7 @@ class _MainState extends State<Main> {
               tooltip: "Load",
               itemBuilder: (context) => [
                 PopupMenuItem<int>(
-                  child: const Text("Clone Repository"),
+                  height: 32,
                   onTap: () async {
                     Future.delayed(
                         const Duration(seconds: 0),
@@ -374,9 +374,10 @@ class _MainState extends State<Main> {
                                   context, _cloneRepository);
                             }));
                   },
+                  child: const Text("Clone Repository"),
                 ),
                 PopupMenuItem<int>(
-                  child: const Text("Open Directory"),
+                  height: 32,
                   onTap: () async {
                     String? result =
                         await FilePicker.platform.getDirectoryPath();
@@ -401,9 +402,11 @@ class _MainState extends State<Main> {
                       }
                     }
                   },
+                  child: const Text("Open Directory"),
                 ),
                 const PopupMenuDivider(),
                 PopupMenuItem<int>(
+                  height: 32,
                   onTap: () {
                     setState(() {
                       _location = "null";
@@ -435,6 +438,7 @@ class _MainState extends State<Main> {
                     tooltip: "Options",
                     itemBuilder: (context) => [
                       PopupMenuItem<int>(
+                        height: 32,
                         enabled: _currentDataStaged.isNotEmpty,
                         child: const Text("New Commit"),
                         onTap: () {
@@ -453,6 +457,7 @@ class _MainState extends State<Main> {
                         },
                       ),
                       PopupMenuItem<int>(
+                        height: 32,
                         child: const Text("Revert Commit"),
                         onTap: () {
                           Future.delayed(
@@ -467,6 +472,7 @@ class _MainState extends State<Main> {
                       ),
                       const PopupMenuDivider(),
                       PopupMenuItem<int>(
+                        height: 32,
                         child: const Text("Pull Commits"),
                         onTap: () async {
                           late BuildContext loadingContext;
@@ -508,6 +514,7 @@ class _MainState extends State<Main> {
                         },
                       ),
                       PopupMenuItem<int>(
+                        height: 32,
                         child: const Text("Push Commits"),
                         onTap: () {
                           late BuildContext loadingContext;
@@ -550,6 +557,7 @@ class _MainState extends State<Main> {
                         },
                       ),
                       PopupMenuItem<int>(
+                        height: 32,
                         child: const Text("Refresh"),
                         onTap: () {
                           _refresh();
@@ -557,6 +565,7 @@ class _MainState extends State<Main> {
                       ),
                       const PopupMenuDivider(),
                       PopupMenuItem<int>(
+                        height: 32,
                         child: const Text("Edit Gitignore"),
                         onTap: () {
                           Future.delayed(
@@ -570,6 +579,7 @@ class _MainState extends State<Main> {
                         },
                       ),
                       PopupMenuItem<int>(
+                        height: 32,
                         child: const Text("Edit Submodules"),
                         onTap: () {
                           Future.delayed(
@@ -976,6 +986,7 @@ class _MainState extends State<Main> {
                                               ),
                                               itemBuilder: (context) => [
                                                 PopupMenuItem<int>(
+                                                  height: 32,
                                                   child: const Text("Stage"),
                                                   onTap: () async {
                                                     try {
@@ -1009,6 +1020,7 @@ class _MainState extends State<Main> {
                                                   },
                                                 ),
                                                 PopupMenuItem<int>(
+                                                  height: 32,
                                                   child: const Text("Unstage"),
                                                   onTap: () async {
                                                     try {
@@ -1044,6 +1056,7 @@ class _MainState extends State<Main> {
                                                 ),
                                                 const PopupMenuDivider(),
                                                 PopupMenuItem<int>(
+                                                  height: 32,
                                                   child: const Text("Restore"),
                                                   onTap: () async {
                                                     try {

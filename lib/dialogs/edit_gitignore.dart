@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart'; // Flutter Material dependency.
+import 'package:flutter/material.dart';
+import 'package:gitbang/config.dart'; // Flutter Material dependency.
 
 class EditGitignoreDialog extends StatefulWidget {
   final String location;
@@ -31,7 +32,7 @@ class _EditGitignoreDialogState extends State<EditGitignoreDialog> {
         height: 270,
         decoration: BoxDecoration(
           border: Border.all(
-            color: Colors.black,
+            color: Config.foregroundColor,
             width: 1,
           ),
         ),

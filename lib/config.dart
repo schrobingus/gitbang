@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-//                      Color(0xff212121)
-// Format for colors is           ^^^^^^ here (hex code)
+/*                      Color(0xff212121)
+ Format for colors is             ^^^^^^ here (hex code) */
 
 class Config {
   static var brightness = SchedulerBinding.instance.window.platformBrightness;
@@ -30,6 +30,7 @@ class Config {
   static ThemeData theme = ThemeData(
     primaryColor: isDark ? const Color(0xff424242) : const Color(0xffeeeeee),
     backgroundColor: isDark ? const Color(0xff212121) : const Color(0xffe0e0e0),
+    disabledColor: isDark ? const Color(0xff9e9e9e) : const Color(0xff757575),
     textTheme: TextTheme(
       bodyText1: TextStyle(
           fontWeight: FontWeight.w400,
@@ -41,5 +42,34 @@ class Config {
       foregroundColor:
           isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
     ),
+    dividerTheme: themeDivider,
+    popupMenuTheme: themeMenu,
+    dialogTheme: themeDialog,
+  );
+
+  static DividerThemeData themeDivider = DividerThemeData(
+    color: isDark ? const Color(0xff9e9e9e) : const Color(0xff757575),
+  );
+
+  static PopupMenuThemeData themeMenu = PopupMenuThemeData(
+    color: isDark ? const Color(0xff616161) : const Color(0xffbdbdbd),
+    textStyle: TextStyle(
+        fontWeight: FontWeight.w400,
+        color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  );
+
+  static DialogTheme themeDialog = DialogTheme(
+    backgroundColor: isDark ? const Color(0xff424242) : const Color(0xffeeeeee),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    contentTextStyle: TextStyle(
+        fontWeight: FontWeight.w400,
+        color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
+    titleTextStyle: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+        color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
   );
 }

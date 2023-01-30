@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart'; // Flutter Material dependency.
+import 'package:gitbang/config.dart';
 import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
 
 AlertDialog newCommitDialog(
@@ -32,7 +33,7 @@ AlertDialog newCommitDialog(
             height: 80,
             decoration: BoxDecoration(
                 border: Border.all(
-              color: Colors.black,
+              color: Config.foregroundColor,
               width: 1,
             )),
             child: SingleChildScrollView(

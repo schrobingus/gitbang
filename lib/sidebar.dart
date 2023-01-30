@@ -94,18 +94,19 @@ class _SidebarState extends State<Sidebar> {
                 stashListEarly.sort();
               }),
             });
-    // FIXME: Sometimes, stashes do not show up. Optimize and fix later.
 
     _stashList = [];
     for (var i = 0; i < stashListEarly.length; i++) {
-      _stashList.add([
-        stashListEarly[i].split(": ")[0], // Stash ID
-        stashListEarly[i].split(": ")[1], // Stash Status
-        // Stash Description
-        stashListEarly[i]
-            .replaceAll("${stashListEarly[i].split(": ")[0]}: ", "")
-            .replaceAll("${stashListEarly[i].split(": ")[1]}: ", "")
-      ]);
+      if (stashListEarly[i].trim() != "") {
+        _stashList.add([
+          stashListEarly[i].split(": ")[0], // Stash ID
+          stashListEarly[i].split(": ")[1], // Stash Status
+          // Stash Description
+          stashListEarly[i]
+              .replaceAll("${stashListEarly[i].split(": ")[0]}: ", "")
+              .replaceAll("${stashListEarly[i].split(": ")[1]}: ", "")
+        ]);
+      }
     }
 
     setState(() {
@@ -736,12 +737,16 @@ class _SidebarState extends State<Sidebar> {
                 padding: const EdgeInsets.all(8),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
+                    color: _stashList.isNotEmpty
+                        ? Theme.of(context).primaryColor
+                        : Colors.black.withOpacity(0),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
                         blurRadius: 5,
-                        color: Colors.black.withOpacity(.4),
+                        color: _stashList.isNotEmpty
+                            ? Colors.black.withOpacity(.4)
+                            : Colors.black.withOpacity(0),
                       ),
                     ],
                   ),
@@ -749,100 +754,109 @@ class _SidebarState extends State<Sidebar> {
                     borderRadius: BorderRadius.circular(8),
                     child: Column(
                       children: [
-                        for (var i = 0; i < _stashList.length; i++) ...[
+                        if (_stashList.isNotEmpty) ...[
+                          for (var i = 0; i < _stashList.length; i++) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, top: 7.5, bottom: 7.5),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                      child: SelectableText.rich(TextSpan(
+                                    children: [
+                                      TextSpan(
+                                          text: "${_stashList[i][2]}  ",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1),
+                                      TextSpan(
+                                          text: _stashList[i][0],
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1
+                                              ?.apply(
+                                                  color: Config
+                                                      .grayedForegroundColor)),
+                                    ],
+                                  ))),
+                                  Row(
+                                    children: [
+                                      SelectableText(_stashList[i][1],
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1),
+                                      SizedBox(
+                                        width: 20,
+                                        height: 16,
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.check,
+                                            color: Config.foregroundColor,
+                                            size: 16,
+                                          ),
+                                          padding: const EdgeInsets.all(0),
+                                          onPressed: () {
+                                            Process.run(
+                                                "git",
+                                                [
+                                                  "stash",
+                                                  "apply",
+                                                  _stashList[i][0]
+                                                ],
+                                                workingDirectory:
+                                                    widget.targetLocation);
+
+                                            widget.targetRefresh();
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 20,
+                                        height: 16,
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.close,
+                                            color: Config.foregroundColor,
+                                            size: 16,
+                                          ),
+                                          padding: const EdgeInsets.all(0),
+                                          onPressed: () {
+                                            Process.run(
+                                                "git",
+                                                [
+                                                  "stash",
+                                                  "drop",
+                                                  _stashList[i][0]
+                                                ],
+                                                workingDirectory:
+                                                    widget.targetLocation);
+
+                                            widget.targetRefresh();
+                                            _refreshStashList();
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (i != _stashList.length - 1) ...[
+                              Container(
+                                height: 1.25,
+                                color: Config.grayedForegroundColor,
+                              ),
+                            ]
+                          ],
+                        ] else ...[
                           Padding(
-                            padding: const EdgeInsets.only(
-                                left: 10, right: 10, top: 7.5, bottom: 7.5),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Flexible(
-                                    child: SelectableText.rich(TextSpan(
-                                  children: [
-                                    TextSpan(
-                                        text: "${_stashList[i][2]}  ",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText1),
-                                    TextSpan(
-                                        text: _stashList[i][0],
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText1
-                                            ?.apply(
-                                                color: Config
-                                                    .grayedForegroundColor)),
-                                  ],
-                                ))),
-                                Row(
-                                  children: [
-                                    SelectableText(_stashList[i][1],
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText1),
-                                    SizedBox(
-                                      width: 20,
-                                      height: 16,
-                                      child: IconButton(
-                                        icon: Icon(
-                                          Icons.check,
-                                          color: Config.foregroundColor,
-                                          size: 16,
-                                        ),
-                                        padding: const EdgeInsets.all(0),
-                                        onPressed: () {
-                                          Process.run(
-                                              "git",
-                                              [
-                                                "stash",
-                                                "apply",
-                                                _stashList[i][0]
-                                              ],
-                                              workingDirectory:
-                                                  widget.targetLocation);
-
-                                          widget.targetRefresh();
-                                        },
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                      height: 16,
-                                      child: IconButton(
-                                        icon: Icon(
-                                          Icons.close,
-                                          color: Config.foregroundColor,
-                                          size: 16,
-                                        ),
-                                        padding: const EdgeInsets.all(0),
-                                        onPressed: () {
-                                          Process.run(
-                                              "git",
-                                              [
-                                                "stash",
-                                                "drop",
-                                                _stashList[i][0]
-                                              ],
-                                              workingDirectory:
-                                                  widget.targetLocation);
-
-                                          widget.targetRefresh();
-                                          _refreshStashList();
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: Text("No stashes found.",
+                                style: Theme.of(context).textTheme.bodyText1),
                           ),
-                          if (i != _stashList.length - 1) ...[
-                            Container(
-                              height: 1.25,
-                              color: Config.grayedForegroundColor,
-                            ),
-                          ]
                         ],
                       ],
                     ),

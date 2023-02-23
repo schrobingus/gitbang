@@ -47,6 +47,18 @@ class Config {
     dialogTheme: themeDialog,
   );
 
+  static InputDecoration inputDecoration = InputDecoration(
+    hintStyle: TextStyle(
+      fontWeight: FontWeight.w400,
+      color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
+    focusedBorder: UnderlineInputBorder(
+      borderSide: BorderSide(
+        style: BorderStyle.solid,
+        color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
+      ),
+    ),
+  );
+
   static DividerThemeData themeDivider = DividerThemeData(
     color: isDark ? const Color(0xff9e9e9e) : const Color(0xff757575),
   );

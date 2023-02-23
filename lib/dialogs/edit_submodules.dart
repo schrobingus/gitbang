@@ -184,43 +184,46 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                     TableRow(
                       children: [
                         TextField(
+                          style: Config.theme.textTheme.bodyText1,
                           controller: submodulesNewName,
                           focusNode: submodulesNewNameFocus,
                           enabled: !submoduleBeingAdded,
-                          decoration: const InputDecoration(
+                          decoration: Config.inputDecoration.copyWith(
                               isDense: true,
                               border: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               errorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.only(
+                              contentPadding: const EdgeInsets.only(
                                   left: 6, right: 6, top: 9, bottom: 9)),
                         ),
                         TextField(
+                          style: Config.theme.textTheme.bodyText1,
                           controller: submodulesNewPath,
                           enabled: !submoduleBeingAdded,
-                          decoration: const InputDecoration(
+                          decoration: Config.inputDecoration.copyWith(
                               isDense: true,
                               border: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               errorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.only(
+                              contentPadding: const EdgeInsets.only(
                                   left: 6, right: 6, top: 9, bottom: 9)),
                         ),
                         TextField(
+                          style: Config.theme.textTheme.bodyText1,
                           controller: submodulesNewUrl,
                           enabled: !submoduleBeingAdded,
-                          decoration: const InputDecoration(
+                          decoration: Config.inputDecoration.copyWith(
                               isDense: true,
                               border: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               errorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.only(
+                              contentPadding: const EdgeInsets.only(
                                   left: 6, right: 6, top: 9, bottom: 9)),
                         ),
                         Row(

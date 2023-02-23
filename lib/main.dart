@@ -41,19 +41,19 @@ class _MainState extends State<Main> {
   late List _currentDataAndDeleted; // Likewise including deleted cached data.
 
   List _currentDataStaged = []; // Staged data.
-  late List
-      _currentDataStagedFilesOnly; // Likewise but filtered to only include existing.
+  late List _currentDataStagedFilesOnly; // Likewise but filtered to only include existing.
   List _currentDataUnstaged = []; // Unstaged data.
   List _currentDeleted = []; // Deleted cached data.
 
   List _branches = []; // List of available branches.
 
-  String _sidebarContentState =
-      ""; // The state of the sidebar ("branches", or "history").
+  String _sidebarContentState = ""; // The state of the sidebar ("branches", or "history").
 
   // The void designed to update and internally refresh all of the current data.
-  void _currentUpdate(var deletedUnstagedResult, var deletedStagedResult,
-      var stagedResult, var unstagedResult) async {
+  void _currentUpdate(
+    var deletedUnstagedResult, var deletedStagedResult,
+    var stagedResult, var unstagedResult
+  ) async {
     // TODO: Possibility of using 'git status --short' over running each command for optimization.
     // Refer to Renzix' comment.
 
@@ -73,11 +73,8 @@ class _MainState extends State<Main> {
     // Convert to parsable string.
     for (var j = 0; j < i.length; j++) {
       _currentData.add(i[j].toString());
-      _currentData[j] = _currentData[j]
-          .replaceAll("File: '", "")
-          .replaceAll("Directory: '", "");
-      _currentData[j] =
-          _currentData[j].substring(0, _currentData[j].length - 1);
+      _currentData[j] = _currentData[j].replaceAll("File: '", "").replaceAll("Directory: '", "");
+      _currentData[j] = _currentData[j].substring(0, _currentData[j].length - 1);
     }
 
     // Filter out internal Git repository configuration.
@@ -89,24 +86,18 @@ class _MainState extends State<Main> {
     _currentData.sort(); // Sort data.
 
     // Await the rest of the data to be received.
-    await deletedUnstagedResult.stdout
-        .transform(utf8.decoder)
-        .forEach((String out) => {
-              _currentDeleted = const LineSplitter().convert(out),
-            });
-    await deletedStagedResult.stdout
-        .transform(utf8.decoder)
-        .forEach((String out) => {
-              _currentDeleted.addAll(const LineSplitter().convert(out)),
-            });
+    await deletedUnstagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
+          _currentDeleted = const LineSplitter().convert(out),
+        });
+    await deletedStagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
+          _currentDeleted.addAll(const LineSplitter().convert(out)),
+        });
     await stagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
           _currentDataStaged = const LineSplitter().convert(out),
         });
-    await unstagedResult.stdout
-        .transform(utf8.decoder)
-        .forEach((String out) => {
-              _currentDataUnstaged = const LineSplitter().convert(out),
-            });
+    await unstagedResult.stdout.transform(utf8.decoder).forEach((String out) => {
+          _currentDataUnstaged = const LineSplitter().convert(out),
+        });
 
     // Extend deleted data to include repository root, and filter based on position.
     for (var i = _currentDeleted.length - 1; i >= 0; i--) {
@@ -118,8 +109,7 @@ class _MainState extends State<Main> {
       bool m = false;
       for (var k = 0; k < _currentData.length; k++) {
         // If the current directory may include it.
-        if (_currentDeleted[i].startsWith(
-            _currentData[k].replaceAll("$_location$_current/", ""))) {
+        if (_currentDeleted[i].startsWith(_currentData[k].replaceAll("$_location$_current/", ""))) {
           m = true;
           break;
         }
@@ -208,35 +198,30 @@ class _MainState extends State<Main> {
   Future<void> _refresh() async {
     try {
       var deletedUnstagedResult = await Process.start(
-          "git", ["ls-files", "--deleted"],
-          workingDirectory: _location);
+        "git", ["ls-files", "--deleted"], workingDirectory: _location);
       var deletedStagedResult = await Process.start(
-          "git", ["diff", "--name-only", "--cached", "--diff-filter=D"],
-          workingDirectory: _location);
+        "git", ["diff", "--name-only", "--cached", "--diff-filter=D"], workingDirectory: _location);
       var stagedResult = await Process.start(
-          "git", ["diff", "--name-only", "--staged"],
-          workingDirectory: _location);
+        "git", ["diff", "--name-only", "--staged"], workingDirectory: _location);
       var unstagedResult = await Process.start(
-          "git", ["ls-files", "--exclude-standard", "--others", "-m"],
-          workingDirectory: _location);
+        "git", ["ls-files", "--exclude-standard", "--others", "-m"], workingDirectory: _location);
 
-      _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult,
-          unstagedResult);
+      _currentUpdate(deletedUnstagedResult, deletedStagedResult, stagedResult, unstagedResult);
     } catch (e) {
       Future.delayed(
           const Duration(seconds: 0),
           () => showDialog(
               context: context,
               builder: (BuildContext context) {
-                return errorMessageDialog(
-                    context, "Failed to refresh repository contents.");
+                return errorMessageDialog(context, "Failed to refresh repository contents.");
               }));
     }
   }
 
   // Void to clone a repository. Hooks into dialog.
-  Future<void> _cloneRepository(String repositoryToClone,
-      String locationToCloneTo, bool cloneRecursively) async {
+  Future<void> _cloneRepository(
+    String repositoryToClone, String locationToCloneTo, bool cloneRecursively
+  ) async {
     late List<String> commandToRun;
 
     if (cloneRecursively) {
@@ -267,18 +252,15 @@ class _MainState extends State<Main> {
 
   // Void to create a new commit. Hooks into dialog and repository data.
   void _newCommit(String commitMessage) async {
-    await Process.run("git", ["commit", "-m", commitMessage],
-        workingDirectory: _location);
+    await Process.run("git", ["commit", "-m", commitMessage], workingDirectory: _location);
 
     _refresh();
   }
 
   // Void to revert an existing commit. Hooks into dialog.
   void _revertCommit(String revertCommit, String revertMessage) async {
-    await Process.run("git", ["revert", "--no-commit", revertCommit],
-        workingDirectory: _location);
-    await Process.run("git", ["commit", "-m", revertMessage],
-        workingDirectory: _location);
+    await Process.run("git", ["revert", "--no-commit", revertCommit], workingDirectory: _location);
+    await Process.run("git", ["commit", "-m", revertMessage], workingDirectory: _location);
 
     _refresh();
   }
@@ -298,10 +280,11 @@ class _MainState extends State<Main> {
 
     // Returns an icon for staging for each item.
     IconData stagingIcon(var item) {
-      if (_currentDataStaged.contains(_currentDataAndDeleted[item]) &&
-          _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
-        return Icons
-            .swap_vert_circle; // build_circle, change_circle, playlist_add_circle, swap_horiz_circle, swap_vert_circle
+      if (
+        _currentDataStaged.contains(_currentDataAndDeleted[item]) &&
+        _currentDataUnstaged.contains(_currentDataAndDeleted[item])
+      ) {
+        return Icons.swap_vert_circle; // build_circle, change_circle, playlist_add_circle, swap_horiz_circle, swap_vert_circle
       } else if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
         return Icons.add_circle;
       } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
@@ -313,10 +296,11 @@ class _MainState extends State<Main> {
 
     // Returns a color for the icon function above.
     Color stagingIconColor(int item) {
-      if (_currentDataStaged.contains(_currentDataAndDeleted[item]) &&
-          _currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
-        return Config
-            .stateColors[2]; // Partially staged color, refer to config.dart.
+      if (
+        _currentDataStaged.contains(_currentDataAndDeleted[item]) &&
+        _currentDataUnstaged.contains(_currentDataAndDeleted[item])
+      ) {
+        return Config.stateColors[2]; // Partially staged color, refer to config.dart.
       } else if (_currentDataStaged.contains(_currentDataAndDeleted[item])) {
         return Config.stateColors[1]; // Staged color. ^
       } else if (_currentDataUnstaged.contains(_currentDataAndDeleted[item])) {
@@ -344,9 +328,9 @@ class _MainState extends State<Main> {
         preferredSize: const Size.fromHeight(40),
         child: AppBar(
           // The top bar.
-          title: SelectableText(_location.split("/").last,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w400)),
+          title: SelectableText(
+            _location.split("/").last,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w400)),
           titleSpacing: 0,
           // Includes the name of the project.
           leading: SizedBox(
@@ -370,8 +354,7 @@ class _MainState extends State<Main> {
                         () => showDialog(
                             context: context,
                             builder: (BuildContext context) {
-                              return cloneRepositoryDialog(
-                                  context, _cloneRepository);
+                              return cloneRepositoryDialog(context, _cloneRepository);
                             }));
                   },
                   child: const Text("Clone Repository"),
@@ -379,12 +362,10 @@ class _MainState extends State<Main> {
                 PopupMenuItem<int>(
                   height: 32,
                   onTap: () async {
-                    String? result =
-                        await FilePicker.platform.getDirectoryPath();
+                    String? result = await FilePicker.platform.getDirectoryPath();
                     if (result != 'null') {
                       bool resultExists = await Directory(result!).exists();
-                      bool resultIsGit =
-                          await Directory("$result/.git").exists();
+                      bool resultIsGit = await Directory("$result/.git").exists();
                       if (resultExists) {
                         if (resultIsGit) {
                           _location = result;
@@ -395,8 +376,7 @@ class _MainState extends State<Main> {
                           showDialog(
                               context: context,
                               builder: (BuildContext context) {
-                                return newRepoDialog(
-                                    context, _newRepository, result);
+                                return newRepoDialog(context, _newRepository, result);
                               });
                         }
                       }
@@ -442,17 +422,15 @@ class _MainState extends State<Main> {
                         enabled: _currentDataStaged.isNotEmpty,
                         child: const Text("New Commit"),
                         onTap: () {
-                          String commitChanges = _currentDataStagedFilesOnly
-                              .join("\n")
-                              .replaceAll(_location, "");
+                          String commitChanges =
+                            _currentDataStagedFilesOnly.join("\n").replaceAll(_location, "");
 
                           Future.delayed(
                               const Duration(seconds: 0),
                               () => showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return newCommitDialog(
-                                        context, _newCommit, commitChanges);
+                                    return newCommitDialog(context, _newCommit, commitChanges);
                                   }));
                         },
                       ),
@@ -465,8 +443,7 @@ class _MainState extends State<Main> {
                               () => showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return revertCommitDialog(
-                                        context, _revertCommit);
+                                    return revertCommitDialog(context, _revertCommit);
                                   }));
                         },
                       ),
@@ -489,13 +466,11 @@ class _MainState extends State<Main> {
                                     context: context,
                                     builder: (BuildContext context) {
                                       loadingContext = context;
-                                      return const Center(
-                                          child: CircularProgressIndicator());
+                                      return const Center(child: CircularProgressIndicator());
                                     }));
 
                             try {
-                              await Process.run("git", ["pull"],
-                                  workingDirectory: _location);
+                              await Process.run("git", ["pull"], workingDirectory: _location);
                             } catch (e) {
                               Future.delayed(
                                   const Duration(seconds: 0),
@@ -503,7 +478,7 @@ class _MainState extends State<Main> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return errorMessageDialog(context,
-                                            "Could not pull new commits from repository.");
+                                          "Could not pull new commits from repository.");
                                       }));
                             }
                             await _refresh();
@@ -531,13 +506,11 @@ class _MainState extends State<Main> {
                                     context: context,
                                     builder: (BuildContext context) {
                                       loadingContext = context;
-                                      return const Center(
-                                          child: CircularProgressIndicator());
+                                      return const Center(child: CircularProgressIndicator());
                                     }));
 
                             try {
-                              await Process.run("git", ["push"],
-                                  workingDirectory: _location);
+                              await Process.run("git", ["push"], workingDirectory: _location);
                             } catch (e) {
                               Future.delayed(
                                   const Duration(seconds: 0),
@@ -545,7 +518,7 @@ class _MainState extends State<Main> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return errorMessageDialog(context,
-                                            "Could not push local commits to repository.");
+                                          "Could not push local commits to repository.");
                                       }));
                             }
 
@@ -573,8 +546,7 @@ class _MainState extends State<Main> {
                               () => showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return EditGitignoreDialog(
-                                        _location, _current, _refresh);
+                                    return EditGitignoreDialog(_location, _current, _refresh);
                                   }));
                         },
                       ),
@@ -587,8 +559,7 @@ class _MainState extends State<Main> {
                               () => showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return EditSubmodulesDialog(
-                                        _location, _current, _refresh);
+                                    return EditSubmodulesDialog(_location, _current, _refresh);
                                   }));
                         },
                       ),
@@ -670,17 +641,14 @@ class _MainState extends State<Main> {
                       _branches = [];
 
                       var branchResult = await Process.start(
-                          "git", ["branch", "-a"],
-                          workingDirectory: _location);
+                        "git", ["branch", "-a"], workingDirectory: _location);
 
-                      await branchResult.stdout
-                          .transform(utf8.decoder)
-                          .forEach((String out) => {
-                                setState(() {
-                                  _branches = const LineSplitter().convert(out);
-                                  _branches.sort();
-                                }),
-                              });
+                      await branchResult.stdout.transform(utf8.decoder).forEach((String out) => {
+                            setState(() {
+                              _branches = const LineSplitter().convert(out);
+                              _branches.sort();
+                            }),
+                          });
 
                       setState(() {
                         _sidebarContentState = "branches";
@@ -696,9 +664,8 @@ class _MainState extends State<Main> {
       ),
       backgroundColor: Theme.of(context).backgroundColor,
       body: Align(
-        alignment: _location != "null" && _currentDataAndDeleted.isNotEmpty
-            ? Alignment.topCenter
-            : Alignment.center,
+        alignment: _location != "null" && _currentDataAndDeleted.isNotEmpty ?
+          Alignment.topCenter : Alignment.center,
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -710,7 +677,7 @@ class _MainState extends State<Main> {
                   if (_location != "null" && _currentDataAndDeleted.isNotEmpty)
                     BoxShadow(
                       blurRadius: 5,
-                      color: Colors.black.withOpacity(.4),
+                      color: const Color.fromARGB(255, 0, 0, 0).withOpacity(.4),
                     ),
                 ],
               ),
@@ -724,406 +691,245 @@ class _MainState extends State<Main> {
                         // Checking if a project is open,
                         if (_currentDataAndDeleted.isNotEmpty) ...[
                           // and if there are existing items in the repository.
-                          for (var i = 0;
-                              i < _currentDataAndDeleted.length;
-                              i++) ...[
+                          for (var i = 0; i < _currentDataAndDeleted.length; i++) ...[
                             Container(
                               decoration: BoxDecoration(
                                 color: Theme.of(context).primaryColor,
                               ),
-                              padding: const EdgeInsets.only(
-                                  left: 10, right: 10, top: 10, bottom: 10),
-                              child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Flexible(
-                                      child: Row(
-                                        /*crossAxisAlignment:
+                              padding: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
+                              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                Flexible(
+                                  child: Row(
+                                    /*crossAxisAlignment:
                                         CrossAxisAlignment.start,*/
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                right: 8.0),
-                                            // Below has the item icon for staging status.
-                                            child: SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child: IconButton(
-                                                  padding:
-                                                      const EdgeInsets.all(0.0),
-                                                  icon: Icon(stagingIcon(i),
-                                                      color:
-                                                          stagingIconColor(i),
-                                                      size: 16.0),
-                                                  onPressed: !_currentDataStaged
-                                                              .contains(
-                                                                  _currentDataAndDeleted[
-                                                                      i]) &&
-                                                          !_currentDataUnstaged
-                                                              .contains(
-                                                                  _currentDataAndDeleted[
-                                                                      i])
-                                                      ? null
-                                                      : () async {
-                                                          if (_currentDataUnstaged
-                                                                  .contains(
-                                                                      _currentDataAndDeleted[
-                                                                          i]) ||
-                                                              (_currentDataStaged
-                                                                      .contains(
-                                                                          _currentDataAndDeleted[
-                                                                              i]) &&
-                                                                  _currentDataUnstaged
-                                                                      .contains(
-                                                                          _currentDataAndDeleted[
-                                                                              i]))) {
-                                                            try {
-                                                              await Process.run(
-                                                                  "git",
-                                                                  [
-                                                                    "add",
-                                                                    _currentDataAndDeleted[
-                                                                            i]
-                                                                        .replaceAll(
-                                                                            "$_location/",
-                                                                            "")
-                                                                  ],
-                                                                  workingDirectory:
-                                                                      _location);
-                                                            } catch (e) {
-                                                              Future.delayed(
-                                                                  const Duration(
-                                                                      seconds:
-                                                                          0),
-                                                                  () => showDialog(
-                                                                      context: context,
-                                                                      builder: (BuildContext context) {
-                                                                        return errorMessageDialog(
-                                                                            context,
-                                                                            "Error staging file.");
-                                                                      }));
-                                                            }
-                                                          } else if (_currentDataStaged
-                                                              .contains(
-                                                                  _currentDataAndDeleted[
-                                                                      i])) {
-                                                            try {
-                                                              await Process.run(
-                                                                  "git",
-                                                                  [
-                                                                    "reset",
-                                                                    "--",
-                                                                    _currentDataAndDeleted[
-                                                                            i]
-                                                                        .replaceAll(
-                                                                            "$_location/",
-                                                                            "")
-                                                                  ],
-                                                                  workingDirectory:
-                                                                      _location);
-                                                            } catch (e) {
-                                                              Future.delayed(
-                                                                  const Duration(
-                                                                      seconds:
-                                                                          0),
-                                                                  () => showDialog(
-                                                                      context: context,
-                                                                      builder: (BuildContext context) {
-                                                                        return errorMessageDialog(
-                                                                            context,
-                                                                            "Error unstaging file.");
-                                                                      }));
-                                                            }
-                                                          }
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 8.0),
+                                        // Below has the item icon for staging status.
+                                        child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: IconButton(
+                                              padding: const EdgeInsets.all(0.0),
+                                              icon: Icon(stagingIcon(i), color: stagingIconColor(i), size: 16.0),
+                                              onPressed:
+                                                !_currentDataStaged.contains(_currentDataAndDeleted[i]) &&
+                                                !_currentDataUnstaged.contains(_currentDataAndDeleted[i])
+                                                  ? null
+                                                  : () async {
+                                                      if (_currentDataUnstaged.contains(_currentDataAndDeleted[i]) ||
+                                                         (_currentDataStaged.contains(_currentDataAndDeleted[i]) &&
+                                                          _currentDataUnstaged.contains(_currentDataAndDeleted[i]))) {
+                                                        try {
+                                                          await Process.run("git", ["add", _currentDataAndDeleted[i].replaceAll(
+                                                                "$_location/", "")], workingDirectory: _location);
+                                                        } catch (e) {
+                                                          Future.delayed(
+                                                              const Duration(seconds: 0),
+                                                              () => showDialog(
+                                                                  context: context,
+                                                                  builder: (BuildContext context) {
+                                                                    return errorMessageDialog(context,
+                                                                      "Error staging file.");
+                                                                  }));
+                                                        }
+                                                      } else if (_currentDataStaged.contains(_currentDataAndDeleted[i])) {
+                                                        try {
+                                                          await Process.run("git", ["reset", "--",
+                                                              _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                                            workingDirectory: _location);
+                                                        } catch (e) {
+                                                          Future.delayed(
+                                                              const Duration(seconds: 0),
+                                                              () => showDialog(
+                                                                  context: context,
+                                                                  builder: (BuildContext context) {
+                                                                    return errorMessageDialog(context,
+                                                                      "Error unstaging file.");
+                                                                  }));
+                                                        }
+                                                      }
 
-                                                          _refresh();
-                                                        },
-                                                )),
-                                          ),
-                                          // Below is the name of the item.
-                                          Expanded(
-                                            child: GestureDetector(
-                                              onTap: () async {
-                                                if (await Directory(
-                                                        _currentDataAndDeleted[
-                                                            i])
-                                                    .exists()) {
-                                                  try {
-                                                    Directory(
-                                                            _currentDataAndDeleted[
-                                                                i])
-                                                        .listSync();
-
-                                                    _current =
-                                                        _currentDataAndDeleted[
-                                                                i]
-                                                            .replaceAll(
-                                                                _location, "");
-
-                                                    if (_current
-                                                            .split("/")
-                                                            .last ==
-                                                        "..") {
-                                                      _current =
-                                                          _current.substring(
-                                                              0,
-                                                              _current.length -
-                                                                  3);
-                                                      _current =
-                                                          _current.replaceAll(
-                                                              _current
-                                                                  .split("/")
-                                                                  .last,
-                                                              "");
-                                                      _current =
-                                                          _current.substring(
-                                                              0,
-                                                              _current.length -
-                                                                  1);
-                                                    }
-                                                  } catch (e) {
-                                                    Future.delayed(
-                                                        const Duration(
-                                                            seconds: 0),
-                                                        () => showDialog(
-                                                            context: context,
-                                                            builder:
-                                                                (BuildContext
-                                                                    context) {
-                                                              return errorMessageDialog(
-                                                                  context,
-                                                                  "Could not jump to directory.");
-                                                            }));
-                                                  }
-                                                  _refresh();
-                                                }
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Text(
-                                                    _currentDataAndDeleted[i]
-                                                        .replaceAll(
-                                                            "$_location$_current",
-                                                            "")
-                                                        .substring(1),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.fade,
-                                                    softWrap: false,
-                                                    textAlign: TextAlign.left,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText1
-                                                        ?.apply(
-                                                            color: deletedColor(
-                                                                i)),
-                                                  ),
-                                                  if (_currentDataAndDeleted[i]
-                                                          .replaceAll(
-                                                              "$_location$_current",
-                                                              "")
-                                                          .substring(1) ==
-                                                      "..") ...[
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              left: 4),
-                                                      child: Icon(
-                                                          Icons
-                                                              .keyboard_double_arrow_left,
-                                                          color: Config
-                                                              .foregroundColor,
-                                                          size: 16),
-                                                    ),
-                                                  ] else if (typeName(i) ==
-                                                      "Directory") ...[
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              left: 4),
-                                                      child: Icon(
-                                                          Icons
-                                                              .keyboard_double_arrow_right,
-                                                          color: Config
-                                                              .foregroundColor,
-                                                          size: 16),
-                                                    ),
-                                                  ],
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
-                                      //crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        // Below is a text box that shows the item type.
-                                        Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 8.0, right: 8.0),
-                                            child: Text(
-                                              typeName(i),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText1,
-                                            )),
-                                        /* Below includes a context menu that allows you
-                                  * to manually stage, unstage, or restore an item.*/
-                                        SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: TooltipVisibility(
-                                            visible: false,
-                                            child: PopupMenuButton<int>(
-                                              padding:
-                                                  const EdgeInsets.all(0.0),
-                                              icon: Icon(
-                                                Icons.more_vert,
-                                                size: 16.0,
-                                                color: Config.foregroundColor,
-                                              ),
-                                              itemBuilder: (context) => [
-                                                PopupMenuItem<int>(
-                                                  height: 32,
-                                                  child: const Text("Stage"),
-                                                  onTap: () async {
-                                                    try {
-                                                      await Process.run(
-                                                          "git",
-                                                          [
-                                                            "add",
-                                                            _currentDataAndDeleted[
-                                                                    i]
-                                                                .replaceAll(
-                                                                    "$_location/",
-                                                                    "")
-                                                          ],
-                                                          workingDirectory:
-                                                              _location);
-                                                    } catch (e) {
-                                                      Future.delayed(
-                                                          const Duration(
-                                                              seconds: 0),
-                                                          () => showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (BuildContext
-                                                                      context) {
-                                                                return errorMessageDialog(
-                                                                    context,
-                                                                    "Error staging file.");
-                                                              }));
-                                                    }
-                                                    _refresh();
-                                                  },
-                                                ),
-                                                PopupMenuItem<int>(
-                                                  height: 32,
-                                                  child: const Text("Unstage"),
-                                                  onTap: () async {
-                                                    try {
-                                                      await Process.run(
-                                                          "git",
-                                                          [
-                                                            "reset",
-                                                            "--",
-                                                            _currentDataAndDeleted[
-                                                                    i]
-                                                                .replaceAll(
-                                                                    "$_location/",
-                                                                    "")
-                                                          ],
-                                                          workingDirectory:
-                                                              _location);
                                                       _refresh();
-                                                    } catch (e) {
-                                                      Future.delayed(
-                                                          const Duration(
-                                                              seconds: 0),
-                                                          () => showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (BuildContext
-                                                                      context) {
-                                                                return errorMessageDialog(
-                                                                    context,
-                                                                    "Error unstaging file.");
-                                                              }));
-                                                    }
-                                                  },
-                                                ),
-                                                const PopupMenuDivider(),
-                                                PopupMenuItem<int>(
-                                                  height: 32,
-                                                  child: const Text("Restore"),
-                                                  onTap: () async {
-                                                    try {
-                                                      await Process.run(
-                                                          "git",
-                                                          [
-                                                            "checkout",
-                                                            "HEAD",
-                                                            _currentDataAndDeleted[
-                                                                    i]
-                                                                .replaceAll(
-                                                                    "$_location/",
-                                                                    "")
-                                                          ],
-                                                          workingDirectory:
-                                                              _location);
-                                                    } catch (e) {
-                                                      Future.delayed(
-                                                          const Duration(
-                                                              seconds: 0),
-                                                          () => showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (BuildContext
-                                                                      context) {
-                                                                return errorMessageDialog(
-                                                                    context,
-                                                                    "Error restoring file.");
-                                                              }));
-                                                    }
+                                                    },
+                                            )),
+                                      ),
+                                      // Below is the name of the item.
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            if (await Directory(_currentDataAndDeleted[i]).exists()) {
+                                              try {
+                                                Directory(_currentDataAndDeleted[i]).listSync();
 
-                                                    _refresh();
-                                                  },
+                                                _current = _currentDataAndDeleted[i].replaceAll(_location, "");
+
+                                                if (_current.split("/").last == "..") {
+                                                  _current = _current.substring(0, _current.length - 3);
+                                                  _current = _current.replaceAll(_current.split("/").last, "");
+                                                  _current = _current.substring(0, _current.length - 1);
+                                                }
+                                              } catch (e) {
+                                                Future.delayed(
+                                                    const Duration(seconds: 0),
+                                                    () => showDialog(
+                                                        context: context,
+                                                        builder: (BuildContext context) {
+                                                          return errorMessageDialog(context,
+                                                            "Could not jump to directory.");
+                                                        }));
+                                              }
+                                              _refresh();
+                                            }
+                                          },
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                _currentDataAndDeleted[i].replaceAll("$_location$_current", "").substring(1),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.fade,
+                                                softWrap: false,
+                                                textAlign: TextAlign.left,
+                                                style: Theme.of(context).textTheme.bodyText1?.apply(color: deletedColor(i)),
+                                              ),
+                                              if (_currentDataAndDeleted[i]
+                                                .replaceAll("$_location$_current", "").substring(1) == "..")
+                                              ...[
+                                                Padding(
+                                                  padding: const EdgeInsets.only(left: 4),
+                                                  child: Icon(Icons.keyboard_double_arrow_left,
+                                                    color: Config.foregroundColor, size: 16),
+                                                ),
+                                              ] else if (typeName(i) == "Directory") ...[
+                                                Padding(
+                                                  padding: const EdgeInsets.only(left: 4),
+                                                  child: Icon(Icons.keyboard_double_arrow_right,
+                                                    color: Config.foregroundColor, size: 16),
                                                 ),
                                               ],
-                                              tooltip: null,
-                                            ),
+                                            ],
                                           ),
                                         ),
-                                      ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Row(
+                                  //crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    // Below is a text box that shows the item type.
+                                    Padding(
+                                        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                                        child: Text(
+                                          typeName(i),
+                                          style: Theme.of(context).textTheme.bodyText1,
+                                        )),
+                                    /* Below includes a context menu that allows you
+                                  * to manually stage, unstage, or restore an item.*/
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: TooltipVisibility(
+                                        visible: false,
+                                        child: PopupMenuButton<int>(
+                                          padding: const EdgeInsets.all(0.0),
+                                          icon: Icon(
+                                            Icons.more_vert,
+                                            size: 16.0,
+                                            color: Config.foregroundColor,
+                                          ),
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem<int>(
+                                              height: 32,
+                                              child: const Text("Stage"),
+                                              onTap: () async {
+                                                try {
+                                                  await Process.run("git", ["add",
+                                                      _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                                    workingDirectory: _location);
+                                                } catch (e) {
+                                                  Future.delayed(
+                                                      const Duration(seconds: 0),
+                                                      () => showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return errorMessageDialog(context, "Error staging file.");
+                                                          }));
+                                                }
+                                                _refresh();
+                                              },
+                                            ),
+                                            PopupMenuItem<int>(
+                                              height: 32,
+                                              child: const Text("Unstage"),
+                                              onTap: () async {
+                                                try {
+                                                  await Process.run("git", ["reset", "--",
+                                                      _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                                    workingDirectory: _location);
+                                                  _refresh();
+                                                } catch (e) {
+                                                  Future.delayed(
+                                                      const Duration(seconds: 0),
+                                                      () => showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return errorMessageDialog(context, "Error unstaging file.");
+                                                          }));
+                                                }
+                                              },
+                                            ),
+                                            const PopupMenuDivider(),
+                                            PopupMenuItem<int>(
+                                              height: 32,
+                                              child: const Text("Restore"),
+                                              onTap: () async {
+                                                try {
+                                                  await Process.run("git", ["checkout", "HEAD",
+                                                      _currentDataAndDeleted[i].replaceAll("$_location/", "")],
+                                                    workingDirectory: _location);
+                                                } catch (e) {
+                                                  Future.delayed(
+                                                      const Duration(seconds: 0),
+                                                      () => showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return errorMessageDialog(context, "Error restoring file.");
+                                                          }));
+                                                }
+
+                                                _refresh();
+                                              },
+                                            ),
+                                          ],
+                                          tooltip: null,
+                                        ),
+                                      ),
                                     ),
-                                  ]),
+                                  ],
+                                ),
+                              ]),
                             ),
                             // Quick separator for the items.
                             if (i != _currentDataAndDeleted.length - 1)
                               Container(
                                 // (Bottom border for decorations sake...)
                                 height: 1.25,
-                                decoration: BoxDecoration(
-                                    color: Config.grayedForegroundColor),
+                                decoration: BoxDecoration(color: Config.grayedForegroundColor),
                               ),
                           ],
                         ] else ...[
                           Padding(
                             // Text box in case the repository has no items.
                             padding: const EdgeInsets.all(16),
-                            child: Text(
-                                "The repository is empty, time to start your journey!",
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodyText1),
+                            child: Text("The repository is empty, time to start your journey!",
+                              textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyText1),
                           ),
                         ],
                       ] else ...[
                         // Start page in case a repository isn't loaded.
                         Padding(
-                          padding: const EdgeInsets.only(
-                              bottom: 32, left: 16, right: 16),
+                          padding: const EdgeInsets.only(bottom: 32, left: 16, right: 16),
                           child: SizedBox(
                             width: 240,
                             height: 130,
@@ -1135,10 +941,8 @@ class _MainState extends State<Main> {
                         ),
                         SizedBox(
                           width: 320,
-                          child: Text(
-                              "Welcome! Load or create a Git repository by clicking the + button.",
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyText1),
+                          child: Text("Welcome! Load or create a Git repository by clicking the + button.",
+                            textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyText1),
                         ),
                       ],
                     ],

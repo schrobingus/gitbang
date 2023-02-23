@@ -15,8 +15,9 @@ AlertDialog newCommitDialog(
           SizedBox(
             width: 240,
             child: TextField(
+              style: Config.theme.textTheme.bodyText1,
               controller: commitMessage,
-              decoration: const InputDecoration(
+              decoration: Config.inputDecoration.copyWith(
                 hintText: "Message",
               ),
             ),

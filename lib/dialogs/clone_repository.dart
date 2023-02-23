@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart'; // Flutter Material dependency.
 import 'package:file_picker/file_picker.dart'; // File picker for clone location.
+import 'package:gitbang/config.dart';
 import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
 
 AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
@@ -15,17 +16,19 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
       child: Column(
         children: [
           TextField(
+            style: Config.theme.textTheme.bodyText1,
             controller: repositoryToClone,
-            decoration: const InputDecoration(
-              hintText: "Repository",
-            ),
+            decoration: Config.inputDecoration.copyWith(
+              hintText: "Repository"),
           ),
           TextField(
+            style: Config.theme.textTheme.bodyText1,
             controller: locationToCloneTo,
-            decoration: InputDecoration(
+            decoration: Config.inputDecoration.copyWith(
               hintText: "Location",
               suffixIcon: IconButton(
-                icon: const Icon(Icons.create_new_folder),
+                icon: Icon(Icons.create_new_folder,
+                  color: Config.foregroundColor),
                 onPressed: () async {
                   locationToCloneTo.text =
                       (await FilePicker.platform.getDirectoryPath())!;
@@ -73,8 +76,8 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
                   });
 
               try {
-                await cloneRepoFunction(
-                    repositoryToClone.text, locationToCloneTo.text, cloneRecursively);
+                await cloneRepoFunction(repositoryToClone.text,
+                    locationToCloneTo.text, cloneRecursively);
               } catch (e) {
                 Future.delayed(
                     const Duration(seconds: 0),

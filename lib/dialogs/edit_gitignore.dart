@@ -36,14 +36,17 @@ class _EditGitignoreDialogState extends State<EditGitignoreDialog> {
             width: 1,
           ),
         ),
-        child: TextField(
-          controller: ignored,
-          expands: true,
-          maxLines: null,
-          decoration: const InputDecoration(border: InputBorder.none),
-          style: const TextStyle(
-            fontFamily: 'Menlo',
-            fontFamilyFallback: ['monospace'],
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8),
+          child: TextField(
+            controller: ignored,
+            expands: true,
+            maxLines: null,
+            decoration: const InputDecoration(border: InputBorder.none),
+            style: Config.theme.textTheme.bodyText1?.copyWith(
+              fontFamily: 'Menlo',
+              fontFamilyFallback: ['monospace'],
+            ),
           ),
         ),
       ),

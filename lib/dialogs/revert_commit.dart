@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart'; // Flutter Material dependency.
 import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
+import 'package:gitbang/config.dart';
 
 AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
   TextEditingController revertMessage = TextEditingController();
@@ -12,14 +13,16 @@ AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
       child: Column(
         children: [
           TextField(
+            style: Config.theme.textTheme.bodyText1,
             controller: revertCommit,
-            decoration: const InputDecoration(
+            decoration: Config.inputDecoration.copyWith(
               hintText: "Commit (ex: f668902)",
             ),
           ),
           TextField(
+            style: Config.theme.textTheme.bodyText1,
             controller: revertMessage,
-            decoration: const InputDecoration(
+            decoration: Config.inputDecoration.copyWith(
               hintText: "Message",
             ),
           ),

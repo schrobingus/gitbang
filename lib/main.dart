@@ -39,6 +39,7 @@ class _MainState extends State<Main> {
   late String _current = ''; // Current location being viewed in the repository.
   late List _currentData; // The data coming from the current location.
   late List _currentDataAndDeleted; // Likewise including deleted cached data.
+  bool _currentShowBar = false;
 
   List _currentDataStaged = []; // Staged data.
   late List _currentDataStagedFilesOnly; // Likewise but filtered to only include existing.
@@ -129,6 +130,13 @@ class _MainState extends State<Main> {
       }
     }
 
+    // If the current directory is the root, then hide the current bar.
+    if (_current.trim() == "") {
+      _currentShowBar = false;
+    } else {
+      _currentShowBar = true;
+    }
+    
     // To filter, make the variable equivalent from an early point.
     var filesOnly = List.from(_currentDataStaged);
 
@@ -660,6 +668,66 @@ class _MainState extends State<Main> {
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: Visibility(
+        visible: _currentShowBar,
+        child: PreferredSize(
+          preferredSize: const Size.fromHeight(30),
+          child: BottomAppBar(
+            color: Theme.of(context).primaryColor,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                height: 30,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 8, right: 8),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        child: Text(_location.split("/").last,
+                          style: Theme.of(context).textTheme.bodyText1),
+                        /*child: Icon(Icons.my_location,
+                          color: Config.foregroundColor,
+                          size: 20),*/
+                        onTap: () {
+                          setState(() {
+                              _current = "";
+                              _refresh();
+                          });
+                        },
+                      ),
+                      if (_current.split("/").length != 1)
+                      Icon(Icons.chevron_right,
+                        color: Config.foregroundColor, size: 16),
+                      for (int i = 0; i < _current.split("/").length; i++) ...[
+                        if (i != 0) ...[
+                          GestureDetector(
+                            child: Text(_current.split("/")[i],
+                              style: Theme.of(context).textTheme.bodyText1),
+                            onTap: () {
+                              var newCurrent = "";
+                              for (int j = 0; j < _current.split("/").length; j++) {
+                                if (j <= i && _current.split("/")[j].trim() != "") {
+                                  newCurrent = "$newCurrent/${_current.split('/')[j]}";
+                                }
+                              }
+                              //print(newCurrent);
+                              _current = newCurrent;
+                              _refresh();
+                            }
+                          ),
+                          if (i != _current.split("/").length-1)
+                          Icon(Icons.chevron_right,
+                            color: Config.foregroundColor, size: 16),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
       backgroundColor: Theme.of(context).backgroundColor,

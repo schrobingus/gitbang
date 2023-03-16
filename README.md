@@ -8,7 +8,7 @@ The program functions very similarly to Git CLI, but is much more mouse based.
   - Click on the icon to toggle between staged and unstaged.
   - If a name is greyed out, that means that the file is deleted but cached.
 - Once you are finished, you have a selection of options by clicking on the 3 dots icon on the top right. You can make a new commit with the staged changes, revert a previous commit based on it's ID, pull (download) commits or push (upload) new commits.
-  -  Extra options in that area include a branch sidebar, where you can create or select branches, and a history sidebar, which shows the entirety of the commit history. 
+  - More options also include a list of stashes (and an interface to make new stashes), a list of branches, and a commit history option.
 
 ## Demonstration
 A video of GitBang in action performing basic Git tasks can be found [here.](https://www.youtube.com/watch?v=CyQHwP7_Xgk)

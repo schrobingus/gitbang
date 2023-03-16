@@ -148,7 +148,26 @@ class _SidebarState extends State<Sidebar> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Local", style: Theme.of(context).textTheme.bodyText1),
+                    Row(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(right: 4),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: IconButton(
+                              icon: Icon(Icons.chevron_left, color: Config.foregroundColor,
+                                size: 16),
+                              padding: EdgeInsets.all(0),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ),
+                        ),
+                        Text("Local", style: Theme.of(context).textTheme.bodyText1),
+                      ],
+                    ),
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
@@ -196,7 +215,9 @@ class _SidebarState extends State<Sidebar> {
                                       child: const Text("Add")),
                                   ],
                                 );
-                          }));
+                              },
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -255,7 +276,9 @@ class _SidebarState extends State<Sidebar> {
                                                 builder: (BuildContext context) {
                                                   return errorMessageDialog(context,
                                                     "Could not switch to branch ($branchName).");
-                                            }));
+                                                },
+                                              ),
+                                            );
                                           }
                                         }
 
@@ -409,6 +432,29 @@ class _SidebarState extends State<Sidebar> {
             ] else if (widget.sidebarContent == "history") ...[
               Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(right: 4),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: IconButton(
+                              icon: Icon(Icons.chevron_left, color: Config.foregroundColor,
+                                size: 16),
+                              padding: EdgeInsets.all(0),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ),
+                        ),
+                        Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
+                      ],
+                    ),
+                  ),
                   if (_showHistory) ...[
                     if (!_historyEmpty) ...[
                       for (var i = 0; i < _historyPageList.length; i++) ...[
@@ -560,7 +606,26 @@ class _SidebarState extends State<Sidebar> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(right: 4),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: IconButton(
+                                icon: Icon(Icons.chevron_left, color: Config.foregroundColor,
+                                  size: 16),
+                                padding: EdgeInsets.all(0),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                          ),
+                          Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
+                        ],
+                      ),
                       // TODO: Add a button to refresh the stash entries.
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
@@ -651,7 +716,9 @@ class _SidebarState extends State<Sidebar> {
                                               style: Theme.of(context).textTheme.bodyText1?.apply(
                                                 color: Config.grayedForegroundColor)),
                                           ],
-                                    ))),
+                                        ),
+                                      ),
+                                    ),
                                     Row(
                                       children: [
                                         SelectableText(_stashList[i][1],

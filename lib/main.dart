@@ -334,395 +334,428 @@ class _MainState extends State<Main> {
       key: _key,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(40),
-        child: AppBar(
-          // The top bar.
-          title: SelectableText(
-            _location.split("/").last,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w400)),
-          titleSpacing: 0,
-          // Includes the name of the project.
-          leading: SizedBox(
-            width: 20,
-            height: 20,
-            /* Context menu below gives options for cloning,
-          * initializing, or closing repository. */
-            child: PopupMenuButton<int>(
-              padding: const EdgeInsets.all(0),
-              icon: const Icon(
-                Icons.add,
-                size: 20.0,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.0),
+            boxShadow: [
+              if (_location != "null" && _currentDataAndDeleted.isNotEmpty)
+              BoxShadow(
+                blurRadius: 5,
+                color: const Color.fromARGB(255, 0, 0, 0).withOpacity(.4),
               ),
-              tooltip: "Load",
-              itemBuilder: (context) => [
-                PopupMenuItem<int>(
-                  height: 32,
-                  onTap: () async {
-                    Future.delayed(
+            ],
+          ),
+          child: AppBar(
+            // The top bar.
+            title: SelectableText(
+              _location.split("/").last,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w400)),
+            titleSpacing: 0,
+            elevation: 0,
+            // Includes the name of the project.
+            leading: SizedBox(
+              width: 20,
+              height: 20,
+              /* Context menu below gives options for cloning,
+              * initializing, or closing repository. */
+              child: PopupMenuButton<int>(
+                padding: const EdgeInsets.all(0),
+                icon: const Icon(
+                  Icons.add,
+                  size: 20.0,
+                ),
+                tooltip: "Load",
+                itemBuilder: (context) => [
+                  PopupMenuItem<int>(
+                    height: 32,
+                    onTap: () async {
+                      Future.delayed(
                         const Duration(seconds: 0),
                         () => showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return cloneRepositoryDialog(context, _cloneRepository);
-                            }));
-                  },
-                  child: const Text("Clone Repository"),
-                ),
-                PopupMenuItem<int>(
-                  height: 32,
-                  onTap: () async {
-                    String? result = await FilePicker.platform.getDirectoryPath();
-                    if (result != 'null') {
-                      bool resultExists = await Directory(result!).exists();
-                      bool resultIsGit = await Directory("$result/.git").exists();
-                      if (resultExists) {
-                        if (resultIsGit) {
-                          _location = result;
-                          _current = '';
-
-                          await _refresh();
-                        } else {
-                          showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return cloneRepositoryDialog(context, _cloneRepository);
+                      }));
+                    },
+                    child: const Text("Clone Repository"),
+                  ),
+                  PopupMenuItem<int>(
+                    height: 32,
+                    onTap: () async {
+                      String? result = await FilePicker.platform.getDirectoryPath();
+                      if (result != 'null') {
+                        bool resultExists = await Directory(result!).exists();
+                        bool resultIsGit = await Directory("$result/.git").exists();
+                        if (resultExists) {
+                          if (resultIsGit) {
+                            _location = result;
+                            _current = '';
+                            
+                            await _refresh();
+                          } else {
+                            showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return newRepoDialog(context, _newRepository, result);
-                              });
+                            });
+                          }
                         }
                       }
-                    }
-                  },
-                  child: const Text("Open Directory"),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem<int>(
-                  height: 32,
-                  onTap: () {
-                    setState(() {
-                      _location = "null";
-                    });
-                  },
-                  enabled: _location != "null",
-                  child: const Text("Close Repository"),
-                ),
-              ],
+                    },
+                    child: const Text("Open Directory"),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<int>(
+                    height: 32,
+                    onTap: () {
+                      setState(() {
+                          _location = "null";
+                      });
+                    },
+                    enabled: _location != "null",
+                    child: const Text("Close Repository"),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            /* Below gives actions for GitBang to handle, including
-          * new commits, reverting a commit, pulling and pushing
-          * commits, as well as simply refreshing manually. */
-            Visibility(
-              visible: _location != "null",
-              child: Padding(
-                padding: const EdgeInsets.only(right: 18),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: PopupMenuButton<int>(
-                    padding: const EdgeInsets.all(0),
-                    icon: const Icon(
-                      Icons.more_horiz,
-                      size: 20.0,
-                    ),
-                    tooltip: "Options",
-                    itemBuilder: (context) => [
-                      PopupMenuItem<int>(
-                        height: 32,
-                        enabled: _currentDataStaged.isNotEmpty,
-                        child: const Text("New Commit"),
-                        onTap: () {
-                          String commitChanges =
-                            _currentDataStagedFilesOnly.join("\n").replaceAll(_location, "");
-
-                          Future.delayed(
-                              const Duration(seconds: 0),
-                              () => showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return newCommitDialog(context, _newCommit, commitChanges);
-                                  }));
-                        },
+            actions: [
+              /* Below gives actions for GitBang to handle, including
+              * new commits, reverting a commit, pulling and pushing
+              * commits, as well as simply refreshing manually. */
+              Visibility(
+                visible: _location != "null",
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 18),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: PopupMenuButton<int>(
+                      padding: const EdgeInsets.all(0),
+                      icon: const Icon(
+                        Icons.more_horiz,
+                        size: 20.0,
                       ),
-                      PopupMenuItem<int>(
-                        height: 32,
-                        child: const Text("Revert Commit"),
-                        onTap: () {
-                          Future.delayed(
-                              const Duration(seconds: 0),
-                              () => showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return revertCommitDialog(context, _revertCommit);
-                                  }));
-                        },
-                      ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem<int>(
-                        height: 32,
-                        child: const Text("Pull Commits"),
-                        onTap: () async {
-                          late BuildContext loadingContext;
-
-                          void pop() {
-                            Navigator.of(loadingContext).pop();
-                          }
-
-                          void work() async {
+                      tooltip: "Options",
+                      itemBuilder: (context) => [
+                        PopupMenuItem<int>(
+                          height: 32,
+                          enabled: _currentDataStaged.isNotEmpty,
+                          child: const Text("New Commit"),
+                          onTap: () {
+                            String commitChanges =
+                              _currentDataStagedFilesOnly.join("\n").replaceAll(_location, "");
+                            
                             Future.delayed(
+                              const Duration(seconds: 0),
+                              () => showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return newCommitDialog(context, _newCommit, commitChanges);
+                            }));
+                          },
+                        ),
+                        PopupMenuItem<int>(
+                          height: 32,
+                          child: const Text("Revert Commit"),
+                          onTap: () {
+                            Future.delayed(
+                              const Duration(seconds: 0),
+                              () => showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return revertCommitDialog(context, _revertCommit);
+                            }));
+                          },
+                        ),
+                        const PopupMenuDivider(),
+                        PopupMenuItem<int>(
+                          height: 32,
+                          child: const Text("Pull Commits"),
+                          onTap: () async {
+                            late BuildContext loadingContext;
+                            
+                            void pop() {
+                              Navigator.of(loadingContext).pop();
+                            }
+                            
+                            void work() async {
+                              Future.delayed(
                                 const Duration(seconds: 0),
                                 () => showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      loadingContext = context;
-                                      return const Center(child: CircularProgressIndicator());
-                                    }));
-
-                            try {
-                              await Process.run("git", ["pull"], workingDirectory: _location);
-                            } catch (e) {
-                              Future.delayed(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    loadingContext = context;
+                                    return const Center(child: CircularProgressIndicator());
+                              }));
+                              
+                              try {
+                                await Process.run("git", ["pull"], workingDirectory: _location);
+                              } catch (e) {
+                                Future.delayed(
                                   const Duration(seconds: 0),
                                   () => showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return errorMessageDialog(context,
-                                          "Could not pull new commits from repository.");
-                                      }));
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return errorMessageDialog(context,
+                                        "Could not pull new commits from repository.");
+                                }));
+                              }
+                              await _refresh();
+                              pop();
                             }
-                            await _refresh();
-                            pop();
-                          }
-
-                          work();
-                        },
-                      ),
-                      PopupMenuItem<int>(
-                        height: 32,
-                        child: const Text("Push Commits"),
-                        onTap: () {
-                          late BuildContext loadingContext;
-
-                          void pop() {
-                            Navigator.of(loadingContext).pop();
-                          }
-
-                          void work() async {
-                            Future.delayed(
+                            
+                            work();
+                          },
+                        ),
+                        PopupMenuItem<int>(
+                          height: 32,
+                          child: const Text("Push Commits"),
+                          onTap: () {
+                            late BuildContext loadingContext;
+                            
+                            void pop() {
+                              Navigator.of(loadingContext).pop();
+                            }
+                            
+                            void work() async {
+                              Future.delayed(
                                 const Duration(seconds: 0),
                                 () => showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      loadingContext = context;
-                                      return const Center(child: CircularProgressIndicator());
-                                    }));
-
-                            try {
-                              await Process.run("git", ["push"], workingDirectory: _location);
-                            } catch (e) {
-                              Future.delayed(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    loadingContext = context;
+                                    return const Center(child: CircularProgressIndicator());
+                              }));
+                              
+                              try {
+                                await Process.run("git", ["push"], workingDirectory: _location);
+                              } catch (e) {
+                                Future.delayed(
                                   const Duration(seconds: 0),
                                   () => showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return errorMessageDialog(context,
-                                          "Could not push local commits to repository.");
-                                      }));
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return errorMessageDialog(context,
+                                        "Could not push local commits to repository.");
+                                }));
+                              }
+                              
+                              await _refresh();
+                              pop();
                             }
-
-                            await _refresh();
-                            pop();
-                          }
-
-                          work();
-                        },
-                      ),
-                      PopupMenuItem<int>(
-                        height: 32,
-                        child: const Text("Refresh"),
-                        onTap: () {
-                          _refresh();
-                        },
-                      ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem<int>(
-                        height: 32,
-                        child: const Text("Edit Gitignore"),
-                        onTap: () {
-                          Future.delayed(
+                            
+                            work();
+                          },
+                        ),
+                        PopupMenuItem<int>(
+                          height: 32,
+                          child: const Text("Refresh"),
+                          onTap: () {
+                            _refresh();
+                          },
+                        ),
+                        const PopupMenuDivider(),
+                        PopupMenuItem<int>(
+                          height: 32,
+                          child: const Text("Edit Gitignore"),
+                          onTap: () {
+                            Future.delayed(
                               const Duration(seconds: 0),
                               () => showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return EditGitignoreDialog(_location, _current, _refresh);
-                                  }));
-                        },
-                      ),
-                      PopupMenuItem<int>(
-                        height: 32,
-                        child: const Text("Edit Submodules"),
-                        onTap: () {
-                          Future.delayed(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return EditGitignoreDialog(_location, _current, _refresh);
+                            }));
+                          },
+                        ),
+                        PopupMenuItem<int>(
+                          height: 32,
+                          child: const Text("Edit Submodules"),
+                          onTap: () {
+                            Future.delayed(
                               const Duration(seconds: 0),
                               () => showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return EditSubmodulesDialog(_location, _current, _refresh);
-                                  }));
-                        },
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return EditSubmodulesDialog(_location, _current, _refresh);
+                            }));
+                          },
+                        ),
+                        /*const PopupMenuDivider(),
+                        PopupMenuItem<int>(
+                        child: const Text("Preferences"),
+                        onTap: () {},
+                      ),*/
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Below launches the sidebar with the commit history state.
+              Visibility(
+                visible: _location != "null",
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 18),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: IconButton(
+                      padding: const EdgeInsets.all(0),
+                      icon: const Icon(
+                        Icons.history,
+                        size: 20.0,
                       ),
-                      /*const PopupMenuDivider(),
-                PopupMenuItem<int>(
-                  child: const Text("Preferences"),
-                  onTap: () {},
-                ),*/
-                    ],
+                      tooltip: "Commit History",
+                      onPressed: () async {
+                        setState(() {
+                            _sidebarContentState = "history";
+                        });
+                        _key.currentState!.openEndDrawer();
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Below launches the sidebar with the commit history state.
-            Visibility(
-              visible: _location != "null",
-              child: Padding(
-                padding: const EdgeInsets.only(right: 18),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: IconButton(
-                    padding: const EdgeInsets.all(0),
-                    icon: const Icon(
-                      Icons.history,
-                      size: 20.0,
+              Visibility(
+                visible: _location != "null",
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 18),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: IconButton(
+                      padding: const EdgeInsets.all(0),
+                      icon: const Icon(
+                        Icons.move_to_inbox_sharp,
+                        size: 20.0,
+                      ),
+                      tooltip: "View Stash",
+                      onPressed: () async {
+                        setState(() {
+                            _sidebarContentState = "stash";
+                        });
+                        _key.currentState!.openEndDrawer();
+                      },
                     ),
-                    tooltip: "Commit History",
-                    onPressed: () async {
-                      setState(() {
-                        _sidebarContentState = "history";
-                      });
-                      _key.currentState!.openEndDrawer();
-                    },
                   ),
                 ),
               ),
-            ),
-            Visibility(
-              visible: _location != "null",
-              child: Padding(
-                padding: const EdgeInsets.only(right: 18),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: IconButton(
-                    padding: const EdgeInsets.all(0),
-                    icon: const Icon(
-                      Icons.move_to_inbox_sharp,
-                      size: 20.0,
-                    ),
-                    tooltip: "View Stash",
-                    onPressed: () async {
-                      setState(() {
-                        _sidebarContentState = "stash";
-                      });
-                      _key.currentState!.openEndDrawer();
-                    },
-                  ),
-                ),
-              ),
-            ),
-            // Below launches the sidebar with the branches view state.
-            Visibility(
-              visible: _location != "null",
-              child: Padding(
-                padding: const EdgeInsets.only(right: 20),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: IconButton(
-                    padding: const EdgeInsets.all(0),
-                    icon: const Icon(
-                      Icons.account_tree_sharp,
-                      size: 20,
-                    ),
-                    tooltip: "Branches",
-                    onPressed: () async {
-                      _branches = [];
-
-                      var branchResult = await Process.start(
-                        "git", ["branch", "-a"], workingDirectory: _location);
-
-                      await branchResult.stdout.transform(utf8.decoder).forEach((String out) => {
+              // Below launches the sidebar with the branches view state.
+              Visibility(
+                visible: _location != "null",
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: IconButton(
+                      padding: const EdgeInsets.all(0),
+                      icon: const Icon(
+                        Icons.account_tree_sharp,
+                        size: 20,
+                      ),
+                      tooltip: "Branches",
+                      onPressed: () async {
+                        _branches = [];
+                        
+                        var branchResult = await Process.start(
+                          "git", ["branch", "-a"], workingDirectory: _location);
+                        
+                        await branchResult.stdout.transform(utf8.decoder).forEach((String out) => {
                             setState(() {
-                              _branches = const LineSplitter().convert(out);
-                              _branches.sort();
+                                _branches = const LineSplitter().convert(out);
+                                _branches.sort();
                             }),
-                          });
-
-                      setState(() {
-                        _sidebarContentState = "branches";
-                      });
-                      _key.currentState!.openEndDrawer();
-                    },
+                        });
+                          
+                        setState(() {
+                            _sidebarContentState = "branches";
+                        });
+                        _key.currentState!.openEndDrawer();
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: Visibility(
         visible: _currentShowBar,
         child: PreferredSize(
           preferredSize: const Size.fromHeight(30),
-          child: BottomAppBar(
-            color: Theme.of(context).primaryColor,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                height: 30,
-                child: Padding(
-                  padding: EdgeInsets.only(left: 8, right: 8),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        child: Text(_location.split("/").last,
-                          style: Theme.of(context).textTheme.bodyText1),
-                        /*child: Icon(Icons.my_location,
-                          color: Config.foregroundColor,
-                          size: 20),*/
-                        onTap: () {
-                          setState(() {
-                              _current = "";
-                              _refresh();
-                          });
-                        },
-                      ),
-                      if (_current.split("/").length != 1)
-                      Icon(Icons.chevron_right,
-                        color: Config.foregroundColor, size: 16),
-                      for (int i = 0; i < _current.split("/").length; i++) ...[
-                        if (i != 0) ...[
-                          GestureDetector(
-                            child: Text(_current.split("/")[i],
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: [
+                if (_location != "null" && _currentDataAndDeleted.isNotEmpty)
+                BoxShadow(
+                  blurRadius: 5,
+                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(.4),
+                ),
+              ],
+            ),
+            child: BottomAppBar(
+              color: Theme.of(context).primaryColor,
+              elevation: 0,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  height: 30,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8, right: 8),
+                    child: Row(
+                      children: [
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            child: Text(_location.split("/").last,
                               style: Theme.of(context).textTheme.bodyText1),
+                            /*child: Icon(Icons.my_location,
+                            color: Config.foregroundColor,
+                            ssze: 20),*/
                             onTap: () {
-                              var newCurrent = "";
-                              for (int j = 0; j < _current.split("/").length; j++) {
-                                if (j <= i && _current.split("/")[j].trim() != "") {
-                                  newCurrent = "$newCurrent/${_current.split('/')[j]}";
-                                }
-                              }
-                              //print(newCurrent);
-                              _current = newCurrent;
-                              _refresh();
-                            }
+                              setState(() {
+                                  _current = "";
+                                  _refresh();
+                              });
+                            },
                           ),
-                          if (i != _current.split("/").length-1)
-                          Icon(Icons.chevron_right,
-                            color: Config.foregroundColor, size: 16),
+                        ),
+                        if (_current.split("/").length != 1)
+                        Icon(Icons.chevron_right,
+                          color: Config.foregroundColor, size: 16),
+                        for (int i = 0; i < _current.split("/").length; i++) ...[
+                          if (i != 0) ...[
+                            MouseRegion(
+                              cursor: i != _current.split("/").length-1
+                              ? SystemMouseCursors.click : SystemMouseCursors.basic,
+                              child: GestureDetector(
+                                child: Text(_current.split("/")[i],
+                                  style: Theme.of(context).textTheme.bodyText1),
+                                onTap: () {
+                                  var newCurrent = "";
+                                  for (int j = 0; j < _current.split("/").length; j++) {
+                                    if (j <= i && _current.split("/")[j].trim() != "") {
+                                      newCurrent = "$newCurrent/${_current.split('/')[j]}";
+                                    }
+                                  }
+                                  //print(newCurrent);
+                                  _current = newCurrent;
+                                  _refresh();
+                                }
+                              ),
+                            ),
+                            if (i != _current.split("/").length-1)
+                            Icon(Icons.chevron_right,
+                              color: Config.foregroundColor, size: 16),
+                          ],
                         ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -824,58 +857,60 @@ class _MainState extends State<Main> {
                                       ),
                                       // Below is the name of the item.
                                       Expanded(
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            if (await Directory(_currentDataAndDeleted[i]).exists()) {
-                                              try {
-                                                Directory(_currentDataAndDeleted[i]).listSync();
+                                        child: MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          child: GestureDetector(
+                                            onTap: () async {
+                                              if (await Directory(_currentDataAndDeleted[i]).exists()) {
+                                                try {
+                                                  Directory(_currentDataAndDeleted[i]).listSync();
+                                                  
+                                                  _current = _currentDataAndDeleted[i].replaceAll(_location, "");
 
-                                                _current = _currentDataAndDeleted[i].replaceAll(_location, "");
-
-                                                if (_current.split("/").last == "..") {
-                                                  _current = _current.substring(0, _current.length - 3);
-                                                  _current = _current.replaceAll(_current.split("/").last, "");
-                                                  _current = _current.substring(0, _current.length - 1);
-                                                }
-                                              } catch (e) {
-                                                Future.delayed(
+                                                  if (_current.split("/").last == "..") {
+                                                    _current = _current.substring(0, _current.length - 3);
+                                                    _current = _current.replaceAll(_current.split("/").last, "");
+                                                    _current = _current.substring(0, _current.length - 1);
+                                                  }
+                                                } catch (e) {
+                                                  Future.delayed(
                                                     const Duration(seconds: 0),
                                                     () => showDialog(
-                                                        context: context,
-                                                        builder: (BuildContext context) {
-                                                          return errorMessageDialog(context,
-                                                            "Could not jump to directory.");
-                                                        }));
+                                                      context: context,
+                                                      builder: (BuildContext context) {
+                                                        return errorMessageDialog(context,
+                                                          "Could not jump to directory.");
+                                                  }));
+                                                }
+                                                _refresh();
                                               }
-                                              _refresh();
-                                            }
-                                          },
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                _currentDataAndDeleted[i].replaceAll("$_location$_current", "").substring(1),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.fade,
-                                                softWrap: false,
-                                                textAlign: TextAlign.left,
-                                                style: Theme.of(context).textTheme.bodyText1?.apply(color: deletedColor(i)),
-                                              ),
-                                              if (_currentDataAndDeleted[i]
-                                                .replaceAll("$_location$_current", "").substring(1) == "..")
-                                              ...[
-                                                Padding(
-                                                  padding: const EdgeInsets.only(left: 4),
-                                                  child: Icon(Icons.keyboard_double_arrow_left,
-                                                    color: Config.foregroundColor, size: 16),
+                                            },
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  _currentDataAndDeleted[i].replaceAll("$_location$_current", "").substring(1),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.fade,
+                                                  softWrap: false,
+                                                  textAlign: TextAlign.left,
+                                                  style: Theme.of(context).textTheme.bodyText1?.apply(color: deletedColor(i)),
                                                 ),
-                                              ] else if (typeName(i) == "Directory") ...[
-                                                Padding(
-                                                  padding: const EdgeInsets.only(left: 4),
-                                                  child: Icon(Icons.keyboard_double_arrow_right,
-                                                    color: Config.foregroundColor, size: 16),
-                                                ),
+                                                if (_currentDataAndDeleted[i]
+                                                  .replaceAll("$_location$_current", "").substring(1) == "..")  ...[
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 4),
+                                                    child: Icon(Icons.keyboard_double_arrow_left,
+                                                      color: Config.foregroundColor, size: 16),
+                                                  ),
+                                                ] else if (typeName(i) == "Directory") ...[
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 4),
+                                                    child: Icon(Icons.keyboard_double_arrow_right,
+                                                      color: Config.foregroundColor, size: 16),
+                                                  ),
+                                                ],
                                               ],
-                                            ],
+                                            ),
                                           ),
                                         ),
                                       ),

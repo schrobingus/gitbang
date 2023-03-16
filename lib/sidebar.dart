@@ -141,94 +141,204 @@ class _SidebarState extends State<Sidebar> {
       backgroundColor: Theme.of(context).backgroundColor,
       child: SingleChildScrollView(
         child: Column(children: [
-          if (widget.sidebarContent == "branches") ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Local", style: Theme.of(context).textTheme.bodyText1),
-                  GestureDetector(
-                    child: Text("+ Add New", style: Theme.of(context).textTheme.bodyText1),
-                    onTap: () {
-                      TextEditingController branchName = TextEditingController();
-                      Future.delayed(
-                        const Duration(seconds: 0),
-                        () => showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('New Branch'),
-                              content: TextField(
-                                style: Config.theme.textTheme.bodyText1,
-                                controller: branchName,
-                                decoration: Config.inputDecoration.copyWith(
-                                  hintText: "Branch Name (ex: 'master')",
+            if (widget.sidebarContent == "branches") ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Local", style: Theme.of(context).textTheme.bodyText1),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        child: Text("+ Make New", style: Theme.of(context).textTheme.bodyText1),
+                        onTap: () {
+                          TextEditingController branchName = TextEditingController();
+                          Future.delayed(
+                            const Duration(seconds: 0),
+                            () => showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('New Branch'),
+                                  content: TextField(
+                                    style: Config.theme.textTheme.bodyText1,
+                                    controller: branchName,
+                                    decoration: Config.inputDecoration.copyWith(
+                                      hintText: "Branch Name (ex: 'master')",
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text("Cancel")),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Navigator.of(context).pop();
+                                        
+                                        try {
+                                          Process.run("git", ["checkout", "-b", branchName.text],
+                                            workingDirectory: widget.targetLocation);
+                                        } catch (e) {
+                                          Future.delayed(
+                                            const Duration(seconds: 0),
+                                            () => showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return errorMessageDialog(context, "Could not create branch.");
+                                          }));
+                                        }
+                                        setState(() {});
+                                      },
+                                      child: const Text("Add")),
+                                  ],
+                                );
+                          }));
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (widget.sidebarBranches.any(_includesLocals)) ...[
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 5,
+                          color: Colors.black.withOpacity(.4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
+                            if (!widget.sidebarBranches[i]
+                              .substring(2, widget.sidebarBranches[i].length)
+                              .split(" -> ").last
+                              .startsWith("remotes/"))
+                            ...[
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 7.5, bottom: 7.5),
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        void checkoutBranch() async {
+                                          try {
+                                            await Process.start("git", ["checkout",
+                                                widget.sidebarBranches[i]
+                                                .substring(2, widget.sidebarBranches[i].length)
+                                                .split(" -> ").last],
+                                              workingDirectory: widget.targetLocation);
+                                          } catch (e) {
+                                            var branchName = widget.sidebarBranches[i]
+                                            .substring(2, widget.sidebarBranches[i].length).split(" -> ").last;
+
+                                            Future.delayed(
+                                              const Duration(seconds: 0),
+                                              () => showDialog(
+                                                context: context,
+                                                builder: (BuildContext context) {
+                                                  return errorMessageDialog(context,
+                                                    "Could not switch to branch ($branchName).");
+                                            }));
+                                          }
+                                        }
+
+                                        if (!widget.sidebarBranches[i].substring(2, widget.sidebarBranches[i].length)
+                                          .startsWith("(")) {
+                                          checkoutBranch();
+                                        }
+                                        Navigator.pop(context);
+                                      },
+                                      // TODO: Forgot why the values are different for text widgets, check later.
+                                      child: MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        child: Text(
+                                          (() {
+                                              if (widget.sidebarBranches[i].contains("(")) {
+                                                return widget.sidebarBranches[i].substring(2,
+                                                  widget.sidebarBranches[i].length - 1).split(" ").last;
+                                              } else {
+                                                return widget.sidebarBranches[i].substring(2,
+                                                  widget.sidebarBranches[i].length).split(" -> ").last;
+                                              }
+                                            }()),
+                                          style: Theme.of(context).textTheme.bodyText1?.apply(color:
+                                            selectedColor(widget.sidebarBranches[i])),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text("Cancel")),
-                                TextButton(
-                                  onPressed: () async {
-                                    Navigator.of(context).pop();
-                                    
-                                    try {
-                                      Process.run("git", ["checkout", "-b", branchName.text],
-                                        workingDirectory: widget.targetLocation);
-                                    } catch (e) {
-                                      Future.delayed(
-                                        const Duration(seconds: 0),
-                                        () => showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return errorMessageDialog(context, "Could not create branch.");
-                                      }));
-                                    }
-                                    setState(() {});
-                                  },
-                                  child: const Text("Add")),
+                              if (!widget.sidebarBranches[i].substring(2, widget.sidebarBranches[i].length)
+                                .split(" -> ").last.startsWith("remotes/") &&
+                                widget.sidebarBranches[i] !=
+                                widget.sidebarBranches.lastWhere((j) => !j.contains("remotes/"))) ...[
+                                Container(
+                                  height: 1.25,
+                                  decoration: BoxDecoration(color: Config.grayedForegroundColor),
+                                ),
                               ],
-                            );
-                      }));
-                    },
-                  ),
-                ],
-              ),
-            ),
-            if (widget.sidebarBranches.any(_includesLocals)) ...[
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 5,
-                        color: Colors.black.withOpacity(.4),
+                            ],
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
-                          if (!widget.sidebarBranches[i]
-                            .substring(2, widget.sidebarBranches[i].length)
-                            .split(" -> ").last
-                            .startsWith("remotes/"))
-                          ...[
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor,
-                              ),
-                              child: Padding(
+                ),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text("No local branches found.", style: Theme.of(context).textTheme.bodyText1),
+                ),
+              ],
+              Padding(
+                padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text("Remote", style:
+                    Theme.of(context).textTheme.bodyText1?.apply(color: Config.foregroundColor)),
+                ),
+              ),
+              if (widget.sidebarBranches.any(_includesRemotes)) ...[
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 5,
+                          color: Colors.black.withOpacity(.4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
+                            if (widget.sidebarBranches[i].substring(2, widget.sidebarBranches[i].length)
+                              .split(" -> ").last.startsWith("remotes/"))
+                            ...[
+                              Padding(
                                 padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 7.5, bottom: 7.5),
                                 child: Align(
                                   alignment: Alignment.topLeft,
@@ -237,477 +347,380 @@ class _SidebarState extends State<Sidebar> {
                                       void checkoutBranch() async {
                                         try {
                                           await Process.start("git", ["checkout",
-                                              widget.sidebarBranches[i]
-                                              .substring(2, widget.sidebarBranches[i].length)
-                                              .split(" -> ").last],
+                                              widget.sidebarBranches[i].substring(2,
+                                                widget.sidebarBranches[i].length).split(" -> ").last],
                                             workingDirectory: widget.targetLocation);
                                         } catch (e) {
-                                          var branchName = widget.sidebarBranches[i]
-                                            .substring(2, widget.sidebarBranches[i].length).split(" -> ").last;
+                                          var branchName =
+                                          widget.sidebarBranches[i].substring(2,
+                                            widget.sidebarBranches[i].length).split(" -> ").last;
 
                                           Future.delayed(
-                                              const Duration(seconds: 0),
-                                              () => showDialog(
-                                                  context: context,
-                                                  builder: (BuildContext context) {
-                                                    return errorMessageDialog(context,
-                                                      "Could not switch to branch ($branchName).");
-                                                  }));
+                                            const Duration(seconds: 0),
+                                            () => showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return errorMessageDialog(context,
+                                                  "Could not switch to branch ($branchName).");
+                                          }));
                                         }
                                       }
 
-                                      if (!widget.sidebarBranches[i].substring(2, widget.sidebarBranches[i].length)
-                                        .startsWith("(")) {
-                                          checkoutBranch();
-                                        }
+                                      checkoutBranch();
                                       Navigator.pop(context);
                                     },
-                                    child: Stack(
-                                      children: [
-                                        Text(
-                                          (() {
-                                            if (widget.sidebarBranches[i].contains("(")) {
-                                              return widget.sidebarBranches[i].substring(2,
-                                                widget.sidebarBranches[i].length - 1).split(" ").last;
-                                            } else {
-                                              return widget.sidebarBranches[i].substring(2,
-                                                widget.sidebarBranches[i].length).split(" -> ").last;
-                                            }
-                                          }()),
-                                          style: Theme.of(context).textTheme.bodyText1?.apply(color:
-                                            selectedColor(widget.sidebarBranches[i])),
-                                        ),
-                                      ],
+                                    child: MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: Text(
+                                        widget.sidebarBranches[i].substring(2,
+                                          widget.sidebarBranches[i].length).split(" -> ").last,
+                                        style: Theme.of(context).textTheme.bodyText1?.apply(
+                                          color: selectedColor(widget.sidebarBranches[i])),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            if (!widget.sidebarBranches[i].substring(2, widget.sidebarBranches[i].length)
-                              .split(" -> ").last.startsWith("remotes/") &&
-                              widget.sidebarBranches[i] !=
-                              widget.sidebarBranches.lastWhere((j) => !j.contains("remotes/"))) ...[
-                              Container(
-                                height: 1.25,
-                                decoration: BoxDecoration(color: Config.grayedForegroundColor),
-                              ),
-                            ],
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text("No local branches found.", style: Theme.of(context).textTheme.bodyText1),
-              ),
-            ],
-            Padding(
-              padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Text("Remote", style:
-                  Theme.of(context).textTheme.bodyText1?.apply(color: Config.foregroundColor)),
-              ),
-            ),
-            if (widget.sidebarBranches.any(_includesRemotes)) ...[
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 5,
-                        color: Colors.black.withOpacity(.4),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < widget.sidebarBranches.length; i++) ...[
-                          if (widget.sidebarBranches[i].substring(2, widget.sidebarBranches[i].length)
-                            .split(" -> ").last.startsWith("remotes/"))
-                          ...[
-                            Padding(
-                              padding: const EdgeInsets.only(left: 10.0, right: 10.0, top: 7.5, bottom: 7.5),
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    void checkoutBranch() async {
-                                      try {
-                                        await Process.start("git", ["checkout",
-                                            widget.sidebarBranches[i].substring(2,
-                                              widget.sidebarBranches[i].length).split(" -> ").last],
-                                          workingDirectory: widget.targetLocation);
-                                      } catch (e) {
-                                        var branchName =
-                                          widget.sidebarBranches[i].substring(2,
-                                            widget.sidebarBranches[i].length).split(" -> ").last;
-
-                                        Future.delayed(
-                                            const Duration(seconds: 0),
-                                            () => showDialog(
-                                                context: context,
-                                                builder: (BuildContext context) {
-                                                  return errorMessageDialog(context,
-                                                    "Could not switch to branch ($branchName).");
-                                                }));
-                                      }
-                                    }
-
-                                    checkoutBranch();
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(
-                                    widget.sidebarBranches[i].substring(2,
-                                      widget.sidebarBranches[i].length).split(" -> ").last,
-                                    style: Theme.of(context).textTheme.bodyText1?.apply(
-                                      color: selectedColor(widget.sidebarBranches[i])),
-                                  ),
+                              if (widget.sidebarBranches[i]
+                                .substring(2, widget.sidebarBranches[i].length).split(" -> ").last
+                                .startsWith("remotes/") &&
+                                widget.sidebarBranches[i] !=
+                                widget.sidebarBranches.lastWhere((j) => j.contains("remotes/")))
+                              ...[
+                                Container(
+                                  height: 1.25,
+                                  decoration: BoxDecoration(color: Config.grayedForegroundColor),
                                 ),
-                              ),
-                            ),
-                            if (widget.sidebarBranches[i]
-                              .substring(2, widget.sidebarBranches[i].length).split(" -> ").last
-                              .startsWith("remotes/") &&
-                              widget.sidebarBranches[i] !=
-                              widget.sidebarBranches.lastWhere((j) => j.contains("remotes/")))
-                            ...[
-                              Container(
-                                height: 1.25,
-                                decoration: BoxDecoration(color: Config.grayedForegroundColor),
-                              ),
+                              ],
                             ],
-                          ],
-                        ]
-                      ],
+                          ]
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text("No remote branches found.",
-                  style: Theme.of(context).textTheme.bodyText1),
-              ),
-            ],
-          ] else if (widget.sidebarContent == "history") ...[
-            Column(
-              children: [
-                if (_showHistory) ...[
-                  if (!_historyEmpty) ...[
-                    for (var i = 0; i < _historyPageList.length; i++) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            borderRadius: BorderRadius.circular(8.0),
-                            boxShadow: [
-                              BoxShadow(
-                                blurRadius: 5,
-                                color: Colors.black.withOpacity(.4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: SelectableText(_historyPageList[i][0],
-                                  style: Theme.of(context).textTheme.bodyText1),
-                              ),
-                              Flexible(
-                                child: Padding(
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text("No remote branches found.",
+                    style: Theme.of(context).textTheme.bodyText1),
+                ),
+              ],
+            ] else if (widget.sidebarContent == "history") ...[
+              Column(
+                children: [
+                  if (_showHistory) ...[
+                    if (!_historyEmpty) ...[
+                      for (var i = 0; i < _historyPageList.length; i++) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  blurRadius: 5,
+                                  color: Colors.black.withOpacity(.4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
                                   padding: const EdgeInsets.all(8),
-                                  child: SelectableText(_historyPageList[i][1],
-                                    textAlign: TextAlign.right,
+                                  child: SelectableText(_historyPageList[i][0],
                                     style: Theme.of(context).textTheme.bodyText1),
                                 ),
-                              ),
-                            ],
+                                Flexible(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: SelectableText(_historyPageList[i][1],
+                                      textAlign: TextAlign.right,
+                                      style: Theme.of(context).textTheme.bodyText1),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                      ],
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text("No commits found.", style: Theme.of(context).textTheme.bodyText1),
                       ),
                     ],
                   ] else ...[
                     Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Text("No commits found.", style: Theme.of(context).textTheme.bodyText1),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Config.foregroundColor,
+                    ))),
+                  ],
+                  if (_historyPageAmount > 1) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 5,
+                              color: Colors.black.withOpacity(.4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: IconButton(
+                                icon: Icon(Icons.keyboard_double_arrow_left, color: Config.foregroundColor),
+                                padding: const EdgeInsets.all(0.0),
+                                onPressed: () {
+                                  setState(() {
+                                      _historyPageNumber = 0;
+                                  });
+                                  _refreshHistory();
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: IconButton(
+                                icon: Icon(Icons.keyboard_arrow_left, color: Config.foregroundColor),
+                                padding: const EdgeInsets.all(0.0),
+                                onPressed: () {
+                                  if (_historyPageNumber > 0) {
+                                    setState(() {
+                                        _historyPageNumber--;
+                                    });
+                                  }
+                                  _refreshHistory();
+                                },
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Text(
+                                "${_historyPageNumber + 1}/$_historyPageAmount",
+                                style: TextStyle(color: Config.foregroundColor, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: IconButton(
+                                icon: Icon(Icons.keyboard_arrow_right, color: Config.foregroundColor),
+                                padding: const EdgeInsets.all(0.0),
+                                onPressed: () {
+                                  if (_historyPageNumber < _historyPageAmount - 1) {
+                                    setState(() {
+                                        _historyPageNumber++;
+                                    });
+                                  }
+
+                                  _refreshHistory();
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: IconButton(
+                                icon: Icon(Icons.keyboard_double_arrow_right, color: Config.foregroundColor),
+                                padding: const EdgeInsets.all(0.0),
+                                onPressed: () {
+                                  setState(() {
+                                      _historyPageNumber = _historyPageAmount - 1;
+                                  });
+                                  _refreshHistory();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
-                ] else ...[
-                  Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Center(
-                          child: CircularProgressIndicator(
-                        color: Config.foregroundColor,
-                      ))),
                 ],
-                if (_historyPageAmount > 1) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 5,
-                            color: Colors.black.withOpacity(.4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: IconButton(
-                              icon: Icon(Icons.keyboard_double_arrow_left, color: Config.foregroundColor),
-                              padding: const EdgeInsets.all(0.0),
-                              onPressed: () {
-                                setState(() {
-                                  _historyPageNumber = 0;
-                                });
-                                _refreshHistory();
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: IconButton(
-                              icon: Icon(Icons.keyboard_arrow_left, color: Config.foregroundColor),
-                              padding: const EdgeInsets.all(0.0),
-                              onPressed: () {
-                                if (_historyPageNumber > 0) {
-                                  setState(() {
-                                    _historyPageNumber--;
-                                  });
-                                }
-                                _refreshHistory();
-                              },
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Text(
-                              "${_historyPageNumber + 1}/$_historyPageAmount",
-                              style: TextStyle(color: Config.foregroundColor, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: IconButton(
-                              icon: Icon(Icons.keyboard_arrow_right, color: Config.foregroundColor),
-                              padding: const EdgeInsets.all(0.0),
-                              onPressed: () {
-                                if (_historyPageNumber < _historyPageAmount - 1) {
-                                  setState(() {
-                                    _historyPageNumber++;
-                                  });
-                                }
-
-                                _refreshHistory();
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: IconButton(
-                              icon: Icon(Icons.keyboard_double_arrow_right, color: Config.foregroundColor),
-                              padding: const EdgeInsets.all(0.0),
-                              onPressed: () {
-                                setState(() {
-                                  _historyPageNumber = _historyPageAmount - 1;
-                                });
-                                _refreshHistory();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ] else if (widget.sidebarContent == "stash") ...[
-            if (_stashRefreshed) ...[
-              Padding(
-                padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
-                    // TODO: Add a button to refresh the stash entries.
-                    GestureDetector(
-                        child: Text("+ Make New", style: Theme.of(context).textTheme.bodyText1),
-                        onTap: () {
-                          TextEditingController stashName = TextEditingController();
-                          Future.delayed(
+              ),
+            ] else if (widget.sidebarContent == "stash") ...[
+              if (_stashRefreshed) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
+                      // TODO: Add a button to refresh the stash entries.
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          child: Text("+ Make New", style: Theme.of(context).textTheme.bodyText1),
+                          onTap: () {
+                            TextEditingController stashName = TextEditingController();
+                            Future.delayed(
                               const Duration(seconds: 0),
                               () => showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text("New Stash"),
-                                      content: TextField(
-                                        style: Config.theme.textTheme.bodyText1,
-                                        controller: stashName,
-                                        decoration: Config.inputDecoration.copyWith(
-                                          hintText: "Stash Description (optional)",
-                                        ),
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text("New Stash"),
+                                    content: TextField(
+                                      style: Config.theme.textTheme.bodyText1,
+                                      controller: stashName,
+                                      decoration: Config.inputDecoration.copyWith(
+                                        hintText: "Stash Description (optional)",
                                       ),
-                                      actions: [
-                                        TextButton(
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text("Cancel")),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+
+                                          List<String> stashArgs = ["stash", "save"];
+                                          if (stashName.text != "") {
+                                            stashArgs.add(stashName.text);
+                                          }
+
+                                          Process.run("git", stashArgs, workingDirectory:
+                                            widget.targetLocation);
+
+                                          widget.targetRefresh();
+                                          _refreshStashList();
+                                        },
+                                        child: const Text("Apply")),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _stashList.isNotEmpty ?
+                      Theme.of(context).primaryColor : Colors.black.withOpacity(0),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 5,
+                          color: _stashList.isNotEmpty ?
+                          Colors.black.withOpacity(.4) : Colors.black.withOpacity(0),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Column(
+                        children: [
+                          if (_stashList.isNotEmpty) ...[
+                            for (var i = 0; i < _stashList.length; i++) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(left: 10, right: 10, top: 7.5, bottom: 7.5),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Flexible(
+                                      child: SelectableText.rich(TextSpan(
+                                          children: [
+                                            TextSpan(text: "${_stashList[i][2]}  ",
+                                              style: Theme.of(context).textTheme.bodyText1),
+                                            TextSpan(text: _stashList[i][0],
+                                              style: Theme.of(context).textTheme.bodyText1?.apply(
+                                                color: Config.grayedForegroundColor)),
+                                          ],
+                                    ))),
+                                    Row(
+                                      children: [
+                                        SelectableText(_stashList[i][1],
+                                          style: Theme.of(context).textTheme.bodyText1),
+                                        SizedBox(
+                                          width: 20,
+                                          height: 16,
+                                          child: IconButton(
+                                            icon: Icon(
+                                              Icons.check,
+                                              color: Config.foregroundColor,
+                                              size: 16,
+                                            ),
+                                            padding: const EdgeInsets.all(0),
                                             onPressed: () {
-                                              Navigator.of(context).pop();
+                                              Process.run("git", ["stash", "apply", _stashList[i][0]],
+                                                workingDirectory: widget.targetLocation);
+
+                                              widget.targetRefresh();
                                             },
-                                            child: const Text("Cancel")),
-                                        TextButton(
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 20,
+                                          height: 16,
+                                          child: IconButton(
+                                            icon: Icon(
+                                              Icons.close,
+                                              color: Config.foregroundColor,
+                                              size: 16,
+                                            ),
+                                            padding: const EdgeInsets.all(0),
                                             onPressed: () {
-                                              Navigator.of(context).pop();
-
-                                              List<String> stashArgs = ["stash", "save"];
-                                              if (stashName.text != "") {
-                                                stashArgs.add(stashName.text);
-                                              }
-
-                                              Process.run("git", stashArgs, workingDirectory:
-                                                widget.targetLocation);
+                                              Process.run("git", ["stash", "drop", _stashList[i][0]],
+                                                workingDirectory: widget.targetLocation);
 
                                               widget.targetRefresh();
                                               _refreshStashList();
                                             },
-                                            child: const Text("Apply")),
+                                          ),
+                                        ),
                                       ],
-                                    );
-                                  }));
-                        }),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _stashList.isNotEmpty ?
-                      Theme.of(context).primaryColor : Colors.black.withOpacity(0),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 5,
-                        color: _stashList.isNotEmpty ?
-                          Colors.black.withOpacity(.4) : Colors.black.withOpacity(0),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Column(
-                      children: [
-                        if (_stashList.isNotEmpty) ...[
-                          for (var i = 0; i < _stashList.length; i++) ...[
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (i != _stashList.length - 1) ...[
+                                Container(
+                                  height: 1.25,
+                                  color: Config.grayedForegroundColor,
+                                ),
+                              ]
+                            ],
+                          ] else ...[
                             Padding(
-                              padding: const EdgeInsets.only(left: 10, right: 10, top: 7.5, bottom: 7.5),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Flexible(
-                                      child: SelectableText.rich(TextSpan(
-                                    children: [
-                                      TextSpan(text: "${_stashList[i][2]}  ",
-                                        style: Theme.of(context).textTheme.bodyText1),
-                                      TextSpan(text: _stashList[i][0],
-                                        style: Theme.of(context).textTheme.bodyText1?.apply(
-                                          color: Config.grayedForegroundColor)),
-                                    ],
-                                  ))),
-                                  Row(
-                                    children: [
-                                      SelectableText(_stashList[i][1],
-                                        style: Theme.of(context).textTheme.bodyText1),
-                                      SizedBox(
-                                        width: 20,
-                                        height: 16,
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.check,
-                                            color: Config.foregroundColor,
-                                            size: 16,
-                                          ),
-                                          padding: const EdgeInsets.all(0),
-                                          onPressed: () {
-                                            Process.run("git", ["stash", "apply", _stashList[i][0]],
-                                              workingDirectory: widget.targetLocation);
-
-                                            widget.targetRefresh();
-                                          },
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 20,
-                                        height: 16,
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.close,
-                                            color: Config.foregroundColor,
-                                            size: 16,
-                                          ),
-                                          padding: const EdgeInsets.all(0),
-                                          onPressed: () {
-                                            Process.run("git", ["stash", "drop", _stashList[i][0]],
-                                              workingDirectory: widget.targetLocation);
-
-                                            widget.targetRefresh();
-                                            _refreshStashList();
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Text("No stashes found.",
+                                style: Theme.of(context).textTheme.bodyText1),
                             ),
-                            if (i != _stashList.length - 1) ...[
-                              Container(
-                                height: 1.25,
-                                color: Config.grayedForegroundColor,
-                              ),
-                            ]
                           ],
-                        ] else ...[
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Text("No stashes found.",
-                              style: Theme.of(context).textTheme.bodyText1),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ],
-        ]),
+        ),
       ),
     );
   }

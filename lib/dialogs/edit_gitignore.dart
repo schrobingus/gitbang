@@ -43,7 +43,7 @@ class _EditGitignoreDialogState extends State<EditGitignoreDialog> {
             expands: true,
             maxLines: null,
             decoration: const InputDecoration(border: InputBorder.none),
-            style: Config.theme.textTheme.bodyText1?.copyWith(
+            style: Config.theme.textTheme.bodyLarge?.copyWith(
               fontFamily: 'Menlo',
               fontFamilyFallback: ['monospace'],
             ),
@@ -55,6 +55,7 @@ class _EditGitignoreDialogState extends State<EditGitignoreDialog> {
             onPressed: () {
               Navigator.of(context).pop();
             },
+            style: Config.theme.textButtonTheme.style,
             child: const Text("Cancel")),
         TextButton(
             onPressed: () async {
@@ -69,6 +70,7 @@ class _EditGitignoreDialogState extends State<EditGitignoreDialog> {
                         "${ignored.text}\n${resultPath?.replaceFirst("${widget.location}/${widget.current}", "")}");
               }
             },
+            style: Config.theme.textButtonTheme.style,
             child: const Text("Load File")),
         TextButton(
             onPressed: () async {
@@ -85,6 +87,7 @@ class _EditGitignoreDialogState extends State<EditGitignoreDialog> {
 
               widget.refresh();
             },
+            style: Config.theme.textButtonTheme.style,
             child: const Text("Apply")),
       ],
     );

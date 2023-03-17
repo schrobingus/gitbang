@@ -13,14 +13,14 @@ AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
       child: Column(
         children: [
           TextField(
-            style: Config.theme.textTheme.bodyText1,
+            style: Config.theme.textTheme.bodyLarge,
             controller: revertCommit,
             decoration: Config.inputDecoration.copyWith(
               hintText: "Commit (ex: f668902)",
             ),
           ),
           TextField(
-            style: Config.theme.textTheme.bodyText1,
+            style: Config.theme.textTheme.bodyLarge,
             controller: revertMessage,
             decoration: Config.inputDecoration.copyWith(
               hintText: "Message",
@@ -34,6 +34,7 @@ AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
           onPressed: () {
             Navigator.of(context).pop();
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Cancel")),
       TextButton(
           onPressed: () async {
@@ -54,6 +55,7 @@ AlertDialog revertCommitDialog(BuildContext context, var revertCommitFunction) {
                       }));
             }
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Apply")),
     ],
   );

@@ -162,9 +162,10 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                           height: 24,
                           child: IconButton(
                             padding: const EdgeInsets.only(top: 3),
-                            icon: Icon(Icons.delete, color: Config.foregroundColor),
-                            onPressed: () async {
-                              await Process.run(
+                            icon: Icon(Icons.delete,
+                                color: Config.foregroundColor),
+                              onPressed: () async {
+                                await Process.run(
                                   "git", ["rm", "-rf", submodules[i][1]],
                                   workingDirectory: widget.location);
 
@@ -184,7 +185,7 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                     TableRow(
                       children: [
                         TextField(
-                          style: Config.theme.textTheme.bodyText1,
+                          style: Config.theme.textTheme.bodyLarge,
                           controller: submodulesNewName,
                           focusNode: submodulesNewNameFocus,
                           enabled: !submoduleBeingAdded,
@@ -199,7 +200,7 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                                   left: 6, right: 6, top: 9, bottom: 9)),
                         ),
                         TextField(
-                          style: Config.theme.textTheme.bodyText1,
+                          style: Config.theme.textTheme.bodyLarge,
                           controller: submodulesNewPath,
                           enabled: !submoduleBeingAdded,
                           decoration: Config.inputDecoration.copyWith(
@@ -210,10 +211,10 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                               errorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
                               contentPadding: const EdgeInsets.only(
-                                  left: 6, right: 6, top: 9, bottom: 9)),
-                        ),
-                        TextField(
-                          style: Config.theme.textTheme.bodyText1,
+                                left: 6, right: 6, top: 9, bottom: 9)),
+                          ),
+                          TextField(
+                          style: Config.theme.textTheme.bodyLarge,
                           controller: submodulesNewUrl,
                           enabled: !submoduleBeingAdded,
                           decoration: Config.inputDecoration.copyWith(
@@ -224,9 +225,9 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                               errorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
                               contentPadding: const EdgeInsets.only(
-                                  left: 6, right: 6, top: 9, bottom: 9)),
-                        ),
-                        Row(
+                                left: 6, right: 6, top: 9, bottom: 9)),
+                          ),
+                          Row(
                           children: [
                             if (!submoduleBeingAdded) ...[
                               SizedBox(
@@ -284,9 +285,10 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                               ),
                             ] else ...[
                               Padding(
-                                padding: const EdgeInsets.only(left: 14, top: 5),
-                                child: Center(
-                                  child: SizedBox(
+                                padding:
+                                    const EdgeInsets.only(left: 14, top: 5),
+                                    child: Center(
+                                      child: SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
@@ -313,14 +315,17 @@ class _EditSubmodulesDialogState extends State<EditSubmodulesDialog> {
                     });
                     submodulesNewNameFocus.requestFocus();
                   },
-            child: const Text("Add Submodule")),
-        TextButton(
+            style: Config.theme.textButtonTheme.style,
+            child: const Text("Add Submodule"),
+        ),
+          TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
               widget.refresh();
             },
+            style: Config.theme.textButtonTheme.style,
             child: const Text("OK")),
-      ],
+        ],
     );
   }
 }

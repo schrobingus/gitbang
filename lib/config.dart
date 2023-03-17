@@ -12,6 +12,8 @@ class Config {
       isDark ? const Color(0xfff5f5f5) : const Color(0xff212121);
   static Color grayedForegroundColor =
       isDark ? const Color(0xff9e9e9e) : const Color(0xff757575);
+  static Color buttonForegroundColor =
+      isDark ? const Color(0xff64b5f6) : const Color(0xff1e88e5);
 
   static List<Color> stateColors = [
     isDark ? const Color(0xffe57373) : const Color(0xffe53935),
@@ -29,10 +31,21 @@ class Config {
 
   static ThemeData theme = ThemeData(
     primaryColor: isDark ? const Color(0xff424242) : const Color(0xffeeeeee),
-    backgroundColor: isDark ? const Color(0xff212121) : const Color(0xffe0e0e0),
+    colorScheme: ColorScheme(
+      brightness: isDark ? Brightness.dark : Brightness.light,
+      primary: isDark ? const Color(0xff424242) : const Color(0xffeeeeee),
+      onPrimary: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
+      onSecondary: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
+      secondary: isDark ? const Color(0xff616161) : const Color(0xffbdbdbd),
+      background: isDark ? const Color(0xff212121) : const Color(0xffe0e0e0),
+      onBackground: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
+      surface: isDark ? const Color(0xff616161) : const Color(0xffbdbdbd),
+      onSurface: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
+      error: Colors.red, onError: Colors.white, // Error colors stay constant.
+    ),
     disabledColor: isDark ? const Color(0xff9e9e9e) : const Color(0xff757575),
     textTheme: TextTheme(
-      bodyText1: TextStyle(
+      bodyLarge: TextStyle(
           fontWeight: FontWeight.w400,
           color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
     ),
@@ -42,15 +55,22 @@ class Config {
       foregroundColor:
           isDark ? const Color(0xfff5f5f5) : const Color(0xff212121),
     ),
+    textButtonTheme: textButton,
     dividerTheme: themeDivider,
     popupMenuTheme: themeMenu,
     dialogTheme: themeDialog,
   );
 
+  static TextButtonThemeData textButton = TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: isDark ? const Color(0xff64b5f6) : const Color(0xff1e88e5),
+    ),
+  );
+
   static InputDecoration inputDecoration = InputDecoration(
     hintStyle: TextStyle(
-      fontWeight: FontWeight.w400,
-      color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
+        fontWeight: FontWeight.w400,
+        color: isDark ? const Color(0xfff5f5f5) : const Color(0xff212121)),
     focusedBorder: UnderlineInputBorder(
       borderSide: BorderSide(
         style: BorderStyle.solid,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart'; // Flutter Material dependency.
 import 'package:gitbang/dialogs/error.dart'; // Error dialog worst-case.
+import 'package:gitbang/config.dart';
 
 AlertDialog newRepoDialog(
     BuildContext context, var newRepoFunction, String locationResult) {
@@ -12,6 +13,7 @@ AlertDialog newRepoDialog(
           onPressed: () {
             Navigator.of(context).pop();
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("No")),
       TextButton(
           onPressed: () async {
@@ -19,19 +21,18 @@ AlertDialog newRepoDialog(
 
             try {
               newRepoFunction(locationResult);
-            } catch(e) {
+            } catch (e) {
               Future.delayed(
                   const Duration(seconds: 0),
-                      () => showDialog(
-                      context: context,
-                      builder:
-                          (BuildContext context) {
+                  () => showDialog(
+                    context: context,
+                      builder: (BuildContext context) {
                         return errorMessageDialog(
-                            context,
-                            "Unable to initialize repository.");
-                      }));
+                            context, "Unable to initialize repository.");
+                    }));
             }
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Yes")),
     ],
   );

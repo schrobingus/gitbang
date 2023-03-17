@@ -12,7 +12,10 @@ AlertDialog errorMessageDialog(BuildContext context, String errorMessage) {
           onPressed: () {
             Navigator.of(context).pop();
           },
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.blue,
+          ),
           child: const Text("Dismiss")),
-    ],
+      ],
   );
 }

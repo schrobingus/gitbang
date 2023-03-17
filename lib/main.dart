@@ -383,6 +383,14 @@ class _MainState extends State<Main> {
                     height: 32,
                     onTap: () async {
                       String? result = await FilePicker.platform.getDirectoryPath();
+                      void promptDialog(result) {
+                        showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return newRepoDialog(context, _newRepository, result);
+                            });
+                      }
+                      
                       if (result != 'null') {
                         bool resultExists = await Directory(result!).exists();
                         bool resultIsGit = await Directory("$result/.git").exists();
@@ -390,14 +398,9 @@ class _MainState extends State<Main> {
                           if (resultIsGit) {
                             _location = result;
                             _current = '';
-                            
                             await _refresh();
                           } else {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return newRepoDialog(context, _newRepository, result);
-                            });
+                            promptDialog(result);
                           }
                         }
                       }
@@ -706,21 +709,32 @@ class _MainState extends State<Main> {
                 child: SizedBox(
                   height: 30,
                   child: Padding(
-                    padding: EdgeInsets.only(left: 8, right: 8),
+                    padding: const EdgeInsets.only(left: 8, right: 8),
                     child: Row(
                       children: [
                         MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
                             child: Text(_location.split("/").last,
-                              style: Theme.of(context).textTheme.bodyText1),
+                              style: Theme.of(context).textTheme.bodyLarge),
                             /*child: Icon(Icons.my_location,
                             color: Config.foregroundColor,
                             ssze: 20),*/
                             onTap: () {
                               setState(() {
+                                try {
                                   _current = "";
                                   _refresh();
+                                } catch (e) {
+                                  Future.delayed(
+                                      const Duration(seconds: 0),
+                                      () => showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return errorMessageDialog(context,
+                                                "Could not jump to directory.");
+                                          }));
+                                }
                               });
                             },
                           ),
@@ -735,17 +749,34 @@ class _MainState extends State<Main> {
                               ? SystemMouseCursors.click : SystemMouseCursors.basic,
                               child: GestureDetector(
                                 child: Text(_current.split("/")[i],
-                                  style: Theme.of(context).textTheme.bodyText1),
+                                  style: Theme.of(context).textTheme.bodyLarge),
                                 onTap: () {
-                                  var newCurrent = "";
-                                  for (int j = 0; j < _current.split("/").length; j++) {
-                                    if (j <= i && _current.split("/")[j].trim() != "") {
-                                      newCurrent = "$newCurrent/${_current.split('/')[j]}";
+                                  try {
+                                      var newCurrent = "";
+                                      for (int j = 0;
+                                          j < _current.split("/").length;
+                                          j++) {
+                                        if (j <= i &&
+                                            _current.split("/")[j].trim() !=
+                                                "") {
+                                          newCurrent =
+                                              "$newCurrent/${_current.split('/')[j]}";
+                                        }
+                                      }
+                                      //print(newCurrent);
+                                      _current = newCurrent;
+                                      _refresh();
+                                    } catch (e) {
+                                      Future.delayed(
+                                          const Duration(seconds: 0),
+                                          () => showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return errorMessageDialog(
+                                                    context,
+                                                    "Could not jump to directory.");
+                                              }));
                                     }
-                                  }
-                                  //print(newCurrent);
-                                  _current = newCurrent;
-                                  _refresh();
                                 }
                               ),
                             ),
@@ -763,7 +794,7 @@ class _MainState extends State<Main> {
           ),
         ),
       ),
-      backgroundColor: Theme.of(context).backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Align(
         alignment: _location != "null" && _currentDataAndDeleted.isNotEmpty ?
           Alignment.topCenter : Alignment.center,
@@ -858,7 +889,8 @@ class _MainState extends State<Main> {
                                       // Below is the name of the item.
                                       Expanded(
                                         child: MouseRegion(
-                                          cursor: SystemMouseCursors.click,
+                                          cursor: Directory(_currentDataAndDeleted[i]).existsSync()
+                                            ? SystemMouseCursors.click : SystemMouseCursors.basic,
                                           child: GestureDetector(
                                             onTap: () async {
                                               if (await Directory(_currentDataAndDeleted[i]).exists()) {
@@ -893,8 +925,8 @@ class _MainState extends State<Main> {
                                                   overflow: TextOverflow.fade,
                                                   softWrap: false,
                                                   textAlign: TextAlign.left,
-                                                  style: Theme.of(context).textTheme.bodyText1?.apply(color: deletedColor(i)),
-                                                ),
+                                                  style: Theme.of(context).textTheme.bodyLarge?.apply(color: deletedColor(i)),
+                                                        ),
                                                 if (_currentDataAndDeleted[i]
                                                   .replaceAll("$_location$_current", "").substring(1) == "..")  ...[
                                                   Padding(
@@ -925,7 +957,7 @@ class _MainState extends State<Main> {
                                         padding: const EdgeInsets.only(left: 8.0, right: 8.0),
                                         child: Text(
                                           typeName(i),
-                                          style: Theme.of(context).textTheme.bodyText1,
+                                          style: Theme.of(context).textTheme.bodyLarge,
                                         )),
                                     /* Below includes a context menu that allows you
                                   * to manually stage, unstage, or restore an item.*/
@@ -1026,7 +1058,7 @@ class _MainState extends State<Main> {
                             // Text box in case the repository has no items.
                             padding: const EdgeInsets.all(16),
                             child: Text("The repository is empty, time to start your journey!",
-                              textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyText1),
+                              textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
                           ),
                         ],
                       ] else ...[
@@ -1045,7 +1077,7 @@ class _MainState extends State<Main> {
                         SizedBox(
                           width: 320,
                           child: Text("Welcome! Load or create a Git repository by clicking the + button.",
-                            textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyText1),
+                            textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
                         ),
                       ],
                     ],

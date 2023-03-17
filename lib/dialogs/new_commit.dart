@@ -15,7 +15,7 @@ AlertDialog newCommitDialog(
           SizedBox(
             width: 240,
             child: TextField(
-              style: Config.theme.textTheme.bodyText1,
+              style: Config.theme.textTheme.bodyLarge,
               controller: commitMessage,
               decoration: Config.inputDecoration.copyWith(
                 hintText: "Message",
@@ -62,6 +62,7 @@ AlertDialog newCommitDialog(
           onPressed: () {
             Navigator.of(context).pop();
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Cancel")),
       TextButton(
           onPressed: () async {
@@ -80,6 +81,7 @@ AlertDialog newCommitDialog(
                       }));
             }
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Apply")),
     ],
   );

@@ -16,13 +16,13 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
       child: Column(
         children: [
           TextField(
-            style: Config.theme.textTheme.bodyText1,
+            style: Config.theme.textTheme.bodyLarge,
             controller: repositoryToClone,
             decoration: Config.inputDecoration.copyWith(
               hintText: "Repository"),
           ),
           TextField(
-            style: Config.theme.textTheme.bodyText1,
+            style: Config.theme.textTheme.bodyLarge,
             controller: locationToCloneTo,
             decoration: Config.inputDecoration.copyWith(
               hintText: "Location",
@@ -56,6 +56,7 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
           onPressed: () {
             Navigator.of(context).pop();
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Cancel")),
       TextButton(
           onPressed: () {
@@ -95,6 +96,7 @@ AlertDialog cloneRepositoryDialog(BuildContext context, var cloneRepoFunction) {
 
             work();
           },
+          style: Config.theme.textButtonTheme.style,
           child: const Text("Clone")),
     ],
   );

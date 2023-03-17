@@ -138,7 +138,7 @@ class _SidebarState extends State<Sidebar> {
     }
 
     return Drawer(
-      backgroundColor: Theme.of(context).backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       child: SingleChildScrollView(
         child: Column(children: [
             if (widget.sidebarContent == "branches") ...[
@@ -151,27 +151,27 @@ class _SidebarState extends State<Sidebar> {
                     Row(
                       children: [
                         Padding(
-                          padding: EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.only(right: 4),
                           child: SizedBox(
                             width: 16,
                             height: 16,
                             child: IconButton(
                               icon: Icon(Icons.chevron_left, color: Config.foregroundColor,
                                 size: 16),
-                              padding: EdgeInsets.all(0),
+                              padding: const EdgeInsets.all(0),
                               onPressed: () {
                                 Navigator.of(context).pop();
                               },
                             ),
                           ),
                         ),
-                        Text("Local", style: Theme.of(context).textTheme.bodyText1),
+                        Text("Local", style: Theme.of(context).textTheme.bodyLarge),
                       ],
                     ),
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
-                        child: Text("+ Make New", style: Theme.of(context).textTheme.bodyText1),
+                        child: Text("+ Make New", style: Theme.of(context).textTheme.bodyLarge),
                         onTap: () {
                           TextEditingController branchName = TextEditingController();
                           Future.delayed(
@@ -182,7 +182,7 @@ class _SidebarState extends State<Sidebar> {
                                 return AlertDialog(
                                   title: const Text('New Branch'),
                                   content: TextField(
-                                    style: Config.theme.textTheme.bodyText1,
+                                    style: Config.theme.textTheme.bodyLarge,
                                     controller: branchName,
                                     decoration: Config.inputDecoration.copyWith(
                                       hintText: "Branch Name (ex: 'master')",
@@ -301,7 +301,7 @@ class _SidebarState extends State<Sidebar> {
                                                   widget.sidebarBranches[i].length).split(" -> ").last;
                                               }
                                             }()),
-                                          style: Theme.of(context).textTheme.bodyText1?.apply(color:
+                                          style: Theme.of(context).textTheme.bodyLarge?.apply(color:
                                             selectedColor(widget.sidebarBranches[i])),
                                         ),
                                       ),
@@ -328,7 +328,7 @@ class _SidebarState extends State<Sidebar> {
               ] else ...[
                 Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Text("No local branches found.", style: Theme.of(context).textTheme.bodyText1),
+                  child: Text("No local branches found.", style: Theme.of(context).textTheme.bodyLarge),
                 ),
               ],
               Padding(
@@ -336,7 +336,7 @@ class _SidebarState extends State<Sidebar> {
                 child: Align(
                   alignment: Alignment.topLeft,
                   child: Text("Remote", style:
-                    Theme.of(context).textTheme.bodyText1?.apply(color: Config.foregroundColor)),
+                    Theme.of(context).textTheme.bodyLarge?.apply(color: Config.foregroundColor)),
                 ),
               ),
               if (widget.sidebarBranches.any(_includesRemotes)) ...[
@@ -397,7 +397,7 @@ class _SidebarState extends State<Sidebar> {
                                       child: Text(
                                         widget.sidebarBranches[i].substring(2,
                                           widget.sidebarBranches[i].length).split(" -> ").last,
-                                        style: Theme.of(context).textTheme.bodyText1?.apply(
+                                        style: Theme.of(context).textTheme.bodyLarge?.apply(
                                           color: selectedColor(widget.sidebarBranches[i])),
                                       ),
                                     ),
@@ -426,7 +426,7 @@ class _SidebarState extends State<Sidebar> {
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: Text("No remote branches found.",
-                    style: Theme.of(context).textTheme.bodyText1),
+                    style: Theme.of(context).textTheme.bodyLarge),
                 ),
               ],
             ] else if (widget.sidebarContent == "history") ...[
@@ -437,21 +437,21 @@ class _SidebarState extends State<Sidebar> {
                     child: Row(
                       children: [
                         Padding(
-                          padding: EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.only(right: 4),
                           child: SizedBox(
                             width: 16,
                             height: 16,
                             child: IconButton(
                               icon: Icon(Icons.chevron_left, color: Config.foregroundColor,
                                 size: 16),
-                              padding: EdgeInsets.all(0),
+                              padding: const EdgeInsets.all(0),
                               onPressed: () {
                                 Navigator.of(context).pop();
                               },
                             ),
                           ),
                         ),
-                        Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
+                        Text("Stashes", style: Theme.of(context).textTheme.bodyLarge),
                       ],
                     ),
                   ),
@@ -478,14 +478,14 @@ class _SidebarState extends State<Sidebar> {
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: SelectableText(_historyPageList[i][0],
-                                    style: Theme.of(context).textTheme.bodyText1),
+                                    style: Theme.of(context).textTheme.bodyLarge),
                                 ),
                                 Flexible(
                                   child: Padding(
                                     padding: const EdgeInsets.all(8),
                                     child: SelectableText(_historyPageList[i][1],
                                       textAlign: TextAlign.right,
-                                      style: Theme.of(context).textTheme.bodyText1),
+                                      style: Theme.of(context).textTheme.bodyLarge),
                                   ),
                                 ),
                               ],
@@ -496,7 +496,7 @@ class _SidebarState extends State<Sidebar> {
                     ] else ...[
                       Padding(
                         padding: const EdgeInsets.all(8),
-                        child: Text("No commits found.", style: Theme.of(context).textTheme.bodyText1),
+                        child: Text("No commits found.", style: Theme.of(context).textTheme.bodyLarge),
                       ),
                     ],
                   ] else ...[
@@ -609,28 +609,28 @@ class _SidebarState extends State<Sidebar> {
                       Row(
                         children: [
                           Padding(
-                            padding: EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.only(right: 4),
                             child: SizedBox(
                               width: 16,
                               height: 16,
                               child: IconButton(
                                 icon: Icon(Icons.chevron_left, color: Config.foregroundColor,
                                   size: 16),
-                                padding: EdgeInsets.all(0),
+                                padding: const EdgeInsets.all(0),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
                               ),
                             ),
                           ),
-                          Text("Stashes", style: Theme.of(context).textTheme.bodyText1),
+                          Text("Stashes", style: Theme.of(context).textTheme.bodyLarge),
                         ],
                       ),
                       // TODO: Add a button to refresh the stash entries.
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
                         child: GestureDetector(
-                          child: Text("+ Make New", style: Theme.of(context).textTheme.bodyText1),
+                          child: Text("+ Make New", style: Theme.of(context).textTheme.bodyLarge),
                           onTap: () {
                             TextEditingController stashName = TextEditingController();
                             Future.delayed(
@@ -641,7 +641,7 @@ class _SidebarState extends State<Sidebar> {
                                   return AlertDialog(
                                     title: const Text("New Stash"),
                                     content: TextField(
-                                      style: Config.theme.textTheme.bodyText1,
+                                      style: Config.theme.textTheme.bodyLarge,
                                       controller: stashName,
                                       decoration: Config.inputDecoration.copyWith(
                                         hintText: "Stash Description (optional)",
@@ -711,9 +711,9 @@ class _SidebarState extends State<Sidebar> {
                                       child: SelectableText.rich(TextSpan(
                                           children: [
                                             TextSpan(text: "${_stashList[i][2]}  ",
-                                              style: Theme.of(context).textTheme.bodyText1),
+                                              style: Theme.of(context).textTheme.bodyLarge),
                                             TextSpan(text: _stashList[i][0],
-                                              style: Theme.of(context).textTheme.bodyText1?.apply(
+                                              style: Theme.of(context).textTheme.bodyLarge?.apply(
                                                 color: Config.grayedForegroundColor)),
                                           ],
                                         ),
@@ -722,7 +722,7 @@ class _SidebarState extends State<Sidebar> {
                                     Row(
                                       children: [
                                         SelectableText(_stashList[i][1],
-                                          style: Theme.of(context).textTheme.bodyText1),
+                                          style: Theme.of(context).textTheme.bodyLarge),
                                         SizedBox(
                                           width: 20,
                                           height: 16,
@@ -776,7 +776,7 @@ class _SidebarState extends State<Sidebar> {
                             Padding(
                               padding: const EdgeInsets.all(8),
                               child: Text("No stashes found.",
-                                style: Theme.of(context).textTheme.bodyText1),
+                                style: Theme.of(context).textTheme.bodyLarge),
                             ),
                           ],
                         ],
